@@ -1,0 +1,25 @@
+# Virtual environments
+.venv/
+venv/
+env/
+.env/
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Datasets
+data/
+
+# Model checkpoints and logs
+models/
+logs/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDEs
+.vscode/
+.idea/

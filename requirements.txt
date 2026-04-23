@@ -1,0 +1,10 @@
+tensorflow==2.10.0
+numpy<2
+opencv-python
+scikit-learn
+matplotlib
+jupyter
+pandas
+seaborn
+tqdm
+pyyaml
