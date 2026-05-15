@@ -3,7 +3,6 @@ numpy<2
 opencv-python
 scikit-learn
 matplotlib
-jupyter
 pandas
 seaborn
 tqdm
