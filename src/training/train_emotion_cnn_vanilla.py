@@ -1,5 +1,5 @@
 """
-src/training/train_emotion_model.py
+src/training/train_emotion_cnn_vanilla.py
 
 Trains Model 1, a custom CNN baseline for emotion detection, on the
 folder-structured AffectNet dataset. The pipeline loads 96x96 RGB images
@@ -35,13 +35,14 @@ class Config:
 
     IMG_SIZE = (96, 96)
     BATCH_SIZE = 32
-    EPOCHS = 50
+    EPOCHS = 100
     LEARNING_RATE = 3e-4
     VALIDATION_SPLIT = 0.2
     EARLY_STOPPING_PATIENCE = 12
-    USE_CLASS_WEIGHTS = False
-    MODEL_SAVE_PATH = os.path.join(PROJECT_ROOT, "models", "emotion_custom_cnn_v2.keras")
-    HISTORY_SAVE_PATH = os.path.join(PROJECT_ROOT, "models", "emotion_custom_cnn_v2_history.json")
+    USE_CLASS_WEIGHTS = True
+    MODEL_SAVE_PATH = os.path.join(PROJECT_ROOT, "models", "emotion_cnn_vanilla.keras")
+    H5_SAVE_PATH = os.path.join(PROJECT_ROOT, "models", "emotion_cnn_vanilla.h5")
+    HISTORY_SAVE_PATH = os.path.join(PROJECT_ROOT, "models", "emotion_cnn_vanilla_history.json")
 
     CLASSES = [
         "anger",
@@ -266,74 +267,63 @@ class CustomEmotionCNN:
 
     def _build(self):
         """Construct the Keras model."""
-        l2_regularizer = tf.keras.regularizers.l2(1e-4)
         inputs = layers.Input(shape=(self.config.IMG_SIZE[0],
                                      self.config.IMG_SIZE[1],
                                      3))
 
         # Block 1
-        x = layers.Conv2D(32, (3, 3), padding="same", use_bias=False,
-                          kernel_regularizer=l2_regularizer)(inputs)
+        x = layers.Conv2D(32, (3, 3), padding="same", use_bias=False)(inputs)
         x = layers.BatchNormalization()(x)
         x = layers.Activation("relu")(x)
-        x = layers.Conv2D(32, (3, 3), padding="same", use_bias=False,
-                          kernel_regularizer=l2_regularizer)(x)
+        x = layers.Conv2D(32, (3, 3), padding="same", use_bias=False)(x)
         x = layers.BatchNormalization()(x)
         x = layers.Activation("relu")(x)
         x = layers.MaxPooling2D((2, 2))(x)
-        x = layers.SpatialDropout2D(0.05)(x)
+        x = layers.Dropout(0.15)(x)
 
         # Block 2
-        x = layers.Conv2D(64, (3, 3), padding="same", use_bias=False,
-                          kernel_regularizer=l2_regularizer)(x)
+        x = layers.Conv2D(64, (3, 3), padding="same", use_bias=False)(x)
         x = layers.BatchNormalization()(x)
         x = layers.Activation("relu")(x)
-        x = layers.Conv2D(64, (3, 3), padding="same", use_bias=False,
-                          kernel_regularizer=l2_regularizer)(x)
+        x = layers.Conv2D(64, (3, 3), padding="same", use_bias=False)(x)
         x = layers.BatchNormalization()(x)
         x = layers.Activation("relu")(x)
         x = layers.MaxPooling2D((2, 2))(x)
-        x = layers.SpatialDropout2D(0.10)(x)
+        x = layers.Dropout(0.20)(x)
 
         # Block 3
-        x = layers.Conv2D(128, (3, 3), padding="same", use_bias=False,
-                          kernel_regularizer=l2_regularizer)(x)
+        x = layers.Conv2D(128, (3, 3), padding="same", use_bias=False)(x)
         x = layers.BatchNormalization()(x)
         x = layers.Activation("relu")(x)
-        x = layers.Conv2D(128, (3, 3), padding="same", use_bias=False,
-                          kernel_regularizer=l2_regularizer)(x)
+        x = layers.Conv2D(128, (3, 3), padding="same", use_bias=False)(x)
         x = layers.BatchNormalization()(x)
         x = layers.Activation("relu")(x)
         x = layers.MaxPooling2D((2, 2))(x)
-        x = layers.SpatialDropout2D(0.15)(x)
+        x = layers.Dropout(0.25)(x)
 
         # Block 4
-        x = layers.Conv2D(256, (3, 3), padding="same", use_bias=False,
-                          kernel_regularizer=l2_regularizer)(x)
+        x = layers.Conv2D(256, (3, 3), padding="same", use_bias=False)(x)
         x = layers.BatchNormalization()(x)
         x = layers.Activation("relu")(x)
-        x = layers.Conv2D(256, (3, 3), padding="same", use_bias=False,
-                          kernel_regularizer=l2_regularizer)(x)
+        x = layers.Conv2D(256, (3, 3), padding="same", use_bias=False)(x)
         x = layers.BatchNormalization()(x)
         x = layers.Activation("relu")(x)
         x = layers.MaxPooling2D((2, 2))(x)
-        x = layers.SpatialDropout2D(0.20)(x)
+        x = layers.Dropout(0.30)(x)
 
         # Classifier
         x = layers.GlobalAveragePooling2D()(x)
-        x = layers.Dense(256, use_bias=False,
-                         kernel_regularizer=l2_regularizer)(x)
+        x = layers.Dense(256, use_bias=False)(x)
         x = layers.BatchNormalization()(x)
         x = layers.Activation("relu")(x)
         x = layers.Dropout(0.50)(x)
         outputs = layers.Dense(len(self.config.CLASSES),
-                               activation="softmax",
-                               kernel_regularizer=l2_regularizer)(x)
+                               activation="softmax")(x)
 
         model = models.Model(inputs=inputs, outputs=outputs, name="CustomEmotionCNN")
         model.compile(
             optimizer=optimizers.Adam(learning_rate=self.config.LEARNING_RATE),
-            loss=tf.keras.losses.CategoricalCrossentropy(label_smoothing=0.05),
+            loss="categorical_crossentropy",
             metrics=[
                 "accuracy",
                 tf.keras.metrics.TopKCategoricalAccuracy(k=2, name="top_2_accuracy")
@@ -398,6 +388,11 @@ class EmotionTrainer:
         os.makedirs(os.path.dirname(self.config.MODEL_SAVE_PATH), exist_ok=True)
         self.model.save(self.config.MODEL_SAVE_PATH)
         print(f"Model saved to {self.config.MODEL_SAVE_PATH}")
+        try:
+            self.model.save(self.config.H5_SAVE_PATH)
+            print(f"H5 model saved to {self.config.H5_SAVE_PATH}")
+        except Exception as exc:
+            print(f"Could not save H5 model: {exc}")
 
     def evaluate(self, test_gen):
         """Evaluate the trained model on the held-out test set."""
@@ -451,8 +446,6 @@ class EmotionTrainer:
 if __name__ == "__main__":
     # Configuration and path diagnostics
     config = Config()
-    print("Running experiment: emotion_custom_cnn_v2")
-    print("Changes: label smoothing, L2 regularisation, SpatialDropout2D, class weights disabled")
     config.print_startup_info()
 
     # Dataset loading

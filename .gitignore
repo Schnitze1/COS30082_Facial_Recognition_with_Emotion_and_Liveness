@@ -16,6 +16,10 @@ data/
 # Model checkpoints and logs
 models/
 logs/
+debug/
+
+# Archived/ignored training experiments
+src/training/ignore/
 
 # Jupyter
 .ipynb_checkpoints/
