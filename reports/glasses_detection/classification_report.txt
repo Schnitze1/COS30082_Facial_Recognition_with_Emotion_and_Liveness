@@ -1,0 +1,9 @@
+              precision    recall  f1-score   support
+
+     glasses     1.0000    1.0000    1.0000       161
+  no_glasses     1.0000    1.0000    1.0000       161
+  sunglasses     1.0000    1.0000    1.0000       159
+
+    accuracy                         1.0000       481
+   macro avg     1.0000    1.0000    1.0000       481
+weighted avg     1.0000    1.0000    1.0000       481

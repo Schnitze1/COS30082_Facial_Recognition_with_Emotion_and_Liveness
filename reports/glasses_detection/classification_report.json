@@ -1,0 +1,33 @@
+{
+    "glasses": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 161.0
+    },
+    "no_glasses": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 161.0
+    },
+    "sunglasses": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 159.0
+    },
+    "accuracy": 1.0,
+    "macro avg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 481.0
+    },
+    "weighted avg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 481.0
+    }
+}
