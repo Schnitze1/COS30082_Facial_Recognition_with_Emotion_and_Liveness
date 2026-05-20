@@ -37,9 +37,13 @@ except ModuleNotFoundError as exc:
 # Paths and model configuration
 # ----------------------------------------------------------------------
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-DEFAULT_MODEL_PATH = os.path.join(PROJECT_ROOT, "models", "emotion_cnn_residual.h5")
+DEFAULT_MODEL_PATH = os.path.join(
+    PROJECT_ROOT, "models", "emotion_detection", "residual", "emotion_cnn_residual.h5"
+)
 
 
+# Keep this order aligned with the training scripts so probability index 0
+# always maps to the same emotion label in the UI and attendance pipeline.
 CLASSES = [
     "anger",
     "contempt",
@@ -109,10 +113,12 @@ class PredictionSmoother:
         self.history = deque(maxlen=max(1, int(window_size)))
 
     def update(self, probabilities):
+        """Return a short moving average over recent model probability outputs."""
         self.history.append(probabilities)
         return np.mean(np.array(self.history), axis=0)
 
     def reset(self):
+        """Clear past predictions when tracking should restart for a new face."""
         self.history.clear()
 
 
@@ -142,6 +148,7 @@ class StableEmotionTracker:
         self.candidate_count = 0
 
     def update(self, top_predictions):
+        """Update the displayed emotion only when predictions are confident and stable."""
         if not top_predictions:
             return self.current_emotion, self.current_confidence
 
@@ -184,7 +191,11 @@ class StableEmotionTracker:
 # ----------------------------------------------------------------------
 class EmotionDetector:
     """
-    Reusable OOP emotion detector.
+    Reusable wrapper around the trained emotion Keras model.
+
+    The final attendance system should pass a cropped face image to
+    predict_from_face(). The full-frame predict_from_frame() method exists for
+    standalone testing and should not replace the team's shared face crop logic.
 
     Final team integration:
         detector = EmotionDetector()
@@ -213,6 +224,8 @@ class EmotionDetector:
         self.face_margin = face_margin
         self.min_face_size = min_face_size
 
+        # The model input size is read from the saved model so integration code
+        # does not need to hardcode whether this model expects 96x96 or 128x128.
         self.model = self._load_emotion_model(self.model_path)
         self.img_size = self._get_model_input_size(self.model)
 
@@ -230,11 +243,12 @@ class EmotionDetector:
     # ------------------------------------------------------------------
     def predict_from_face(self, face_bgr):
         """
-        Predict emotion from a cropped face.
+        Predict emotion from a cropped OpenCV face image.
 
         Input:
             face_bgr:
-                Cropped OpenCV face image in BGR format.
+                Cropped face image in BGR format. The detector performs colour
+                conversion, resizing, and training-matched preprocessing.
 
         Output:
             Dictionary with:
@@ -250,6 +264,8 @@ class EmotionDetector:
         if face_bgr is None or face_bgr.size == 0:
             return self._empty_result(face_detected=False)
 
+        # Public integrations should pass only the cropped face here; this keeps
+        # emotion detection independent from the webcam and attendance modules.
         batch = self._preprocess_face(face_bgr)
 
         probabilities = self.model.predict(batch, verbose=0)[0]
@@ -310,6 +326,7 @@ class EmotionDetector:
     # Face detection helpers for predict_from_frame()
     # ------------------------------------------------------------------
     def _build_face_detector(self):
+        """Create the local OpenCV detector used only by the standalone test path."""
         cascade_path = os.path.join(
             cv2.data.haarcascades,
             "haarcascade_frontalface_default.xml",
@@ -323,6 +340,7 @@ class EmotionDetector:
         return detector
 
     def _detect_largest_face(self, frame_bgr):
+        """Detect the largest face when testing this detector without the full system."""
         gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
 
         faces = self.face_detector.detectMultiScale(
@@ -346,6 +364,7 @@ class EmotionDetector:
         return face_crop, square_box
 
     def _crop_face_square(self, frame_bgr, x, y, w, h):
+        """Create a square crop so resizing does not stretch facial geometry."""
         frame_h, frame_w = frame_bgr.shape[:2]
 
         side = int(max(w, h) * (1.0 + 2.0 * self.face_margin))
@@ -373,24 +392,26 @@ class EmotionDetector:
         """
         Convert OpenCV BGR face crop into model input.
 
-        Handles:
-        - BGR to RGB
-        - resize to model input size
-        - float32 conversion
-        - /255 rescaling
-        - batch dimension
+        The conversion and scaling mirror the training pipeline. This prevents
+        the same saved model from receiving different pixel ranges in different
+        integration files.
         """
 
+        # OpenCV provides BGR images, while the CNN was trained on RGB images.
         face_rgb = cv2.cvtColor(face_bgr, cv2.COLOR_BGR2RGB)
+        # Keep resizing inside the detector so every caller uses the saved
+        # model's expected input dimensions.
         face_rgb = cv2.resize(face_rgb, self.img_size, interpolation=cv2.INTER_AREA)
         face_rgb = face_rgb.astype(np.float32)
 
         if self.preprocess_mode == "rescale":
+            # The custom emotion CNNs were trained with 0-1 scaled pixels.
             face_rgb = face_rgb / 255.0
 
         return np.expand_dims(face_rgb, axis=0)
 
     def _get_top_predictions(self, probabilities):
+        """Return emotion probabilities in descending order for UI/debug display."""
         top_indices = np.argsort(probabilities)[::-1]
 
         return [
@@ -407,6 +428,7 @@ class EmotionDetector:
         face_box=None,
         top_predictions=None,
     ):
+        """Package prediction output with UI metadata for downstream integration."""
         info = EMOTION_FEEDBACK.get(emotion, EMOTION_FEEDBACK["neutral"])
 
         return {
@@ -420,6 +442,7 @@ class EmotionDetector:
         }
 
     def _empty_result(self, face_detected=False):
+        """Return a stable default payload when no usable face is available."""
         info = EMOTION_FEEDBACK["neutral"]
 
         return {
@@ -436,6 +459,7 @@ class EmotionDetector:
     # Model loading helpers
     # ------------------------------------------------------------------
     def _get_model_input_size(self, model):
+        """Read the saved model input shape so preprocessing stays model-specific."""
         input_shape = model.input_shape[0] if isinstance(model.input_shape, list) else model.input_shape
 
         height, width, channels = input_shape[1], input_shape[2], input_shape[3]
@@ -448,6 +472,7 @@ class EmotionDetector:
         return int(width), int(height)
 
     def _load_emotion_model(self, model_path):
+        """Load a Keras or H5 emotion model for inference without compiling it."""
         if not os.path.isfile(model_path):
             raise FileNotFoundError(f"Emotion model not found: {model_path}")
 
@@ -489,6 +514,7 @@ class EmotionDetector:
                 ) from second_exc
 
     def _build_compatibility_objects(self):
+        """Provide compatibility shims for models exported by newer Keras versions."""
         class CompatibleInputLayer(tf.keras.layers.InputLayer):
             def __init__(self, *args, batch_shape=None, optional=None, **kwargs):
                 if batch_shape is not None and "batch_input_shape" not in kwargs:
@@ -506,6 +532,7 @@ class EmotionDetector:
         }
 
     def _create_sanitized_h5_copy(self, model_path):
+        """Create a temporary H5 copy with unsupported newer Keras fields removed."""
         temp_dir = tempfile.mkdtemp(prefix="emotion_model_")
         sanitized_path = os.path.join(temp_dir, os.path.basename(model_path))
         shutil.copy2(model_path, sanitized_path)
@@ -528,6 +555,7 @@ class EmotionDetector:
         return sanitized_path
 
     def _sanitize_keras_config(self, value):
+        """Recursively remove serialization keys unsupported by older TensorFlow."""
         if isinstance(value, dict):
             config = value.get("config")
 

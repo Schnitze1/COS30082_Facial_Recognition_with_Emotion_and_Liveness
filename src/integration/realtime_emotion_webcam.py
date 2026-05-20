@@ -40,7 +40,9 @@ except ModuleNotFoundError as exc:
 # Project paths and model configuration
 # ----------------------------------------------------------------------
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-DEFAULT_MODEL_PATH = os.path.join(PROJECT_ROOT, "models", "emotion_cnn_residual.h5")
+DEFAULT_MODEL_PATH = os.path.join(
+    PROJECT_ROOT, "models", "emotion_detection", "residual", "emotion_cnn_residual.h5"
+)
 
 
 CLASSES = [
@@ -187,7 +189,7 @@ def parse_args():
         "--min-confidence",
         type=float,
         default=0.40,
-        help="Minimum confidence required to show a real emotion instead of uncertain.",
+        help="Minimum confidence required before allowing the displayed emotion to change.",
     )
 
     parser.add_argument(
@@ -518,10 +520,11 @@ class StableEmotionTracker:
     """
     Prevents emotion from changing every frame.
 
-    Logic:
-    - If confidence is too low, show uncertain.
-    - If top-1 and top-2 predictions are too close, show uncertain.
-    - Only update displayed emotion after the same emotion appears for several frames.
+    Updated behaviour:
+    - Does not display uncertain during normal prediction.
+    - If confidence is low, it keeps the last stable emotion.
+    - If top-1 and top-2 predictions are too close, it keeps the last stable emotion.
+    - Only updates emotion after the same confident emotion appears for several frames.
     """
 
     def __init__(self, required_frames=5, min_confidence=0.45, min_margin=0.08):
@@ -529,7 +532,7 @@ class StableEmotionTracker:
         self.min_confidence = min_confidence
         self.min_margin = min_margin
 
-        self.current_emotion = "uncertain"
+        self.current_emotion = "neutral"
         self.current_confidence = 0.0
 
         self.candidate_emotion = None
@@ -548,19 +551,17 @@ class StableEmotionTracker:
 
         confidence_gap = top_confidence - second_confidence
 
+        # If the model is unsure, do not display uncertain.
+        # Keep the last stable displayed emotion instead.
         if top_confidence < self.min_confidence or confidence_gap < self.min_margin:
-            proposed_emotion = "uncertain"
-            proposed_confidence = top_confidence
-        else:
-            proposed_emotion = top_emotion
-            proposed_confidence = top_confidence
+            return self.current_emotion, self.current_confidence
 
-        if proposed_emotion == self.candidate_emotion:
+        if top_emotion == self.candidate_emotion:
             self.candidate_count += 1
-            self.candidate_confidence = proposed_confidence
+            self.candidate_confidence = top_confidence
         else:
-            self.candidate_emotion = proposed_emotion
-            self.candidate_confidence = proposed_confidence
+            self.candidate_emotion = top_emotion
+            self.candidate_confidence = top_confidence
             self.candidate_count = 1
 
         if self.candidate_count >= self.required_frames:
@@ -570,7 +571,7 @@ class StableEmotionTracker:
         return self.current_emotion, self.current_confidence
 
     def reset(self):
-        self.current_emotion = "uncertain"
+        self.current_emotion = "neutral"
         self.current_confidence = 0.0
         self.candidate_emotion = None
         self.candidate_confidence = 0.0
@@ -673,7 +674,7 @@ def get_font(size=24, emoji=False):
 
 
 def draw_emotion_panel(frame, emotion, confidence, person_name=None):
-    info = EMOTION_FEEDBACK.get(emotion, EMOTION_FEEDBACK["uncertain"])
+    info = EMOTION_FEEDBACK.get(emotion, EMOTION_FEEDBACK["neutral"])
 
     panel_x = 20
     panel_y = 20
@@ -871,7 +872,7 @@ def run_webcam(model, args, img_size, preprocess_mode):
 
             draw_emotion_panel(
                 frame,
-                "uncertain",
+                "neutral",
                 0.0,
                 person_name=args.person_name,
             )
