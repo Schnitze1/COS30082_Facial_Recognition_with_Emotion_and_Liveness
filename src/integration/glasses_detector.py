@@ -7,10 +7,10 @@ The detector expects a cropped face image and predicts one of:
 It can also accept a full webcam frame through predict_from_frame(frame_bgr),
 where face detection and consistent cropping are handled internally.
 
-Decision logic:
+Advisory status:
     glasses    -> allow
     no_glasses -> allow
-    sunglasses -> block
+    sunglasses -> advisory
 """
 
 from pathlib import Path
@@ -31,25 +31,25 @@ DEFAULT_MODEL_PATH = (
 
 CLASSES = ["glasses", "no_glasses", "sunglasses"]
 DECISIONS = {
-    # Sunglasses are blocked because they can hide the eye/periocular region
-    # that is important for identity verification and liveness checks.
+    # Keep these values for compatibility with existing integrations. The UI
+    # treats glasses detection as advisory and does not stop verification.
     "glasses": "allow",
     "no_glasses": "allow",
     "sunglasses": "block",
 }
 MESSAGES = {
-    "no_glasses": "No glasses detected - verification can continue",
-    "glasses": "Glasses detected - verification can continue",
-    "sunglasses": "Sunglasses detected - please remove before verification",
+    "no_glasses": "No glasses detected. Verification continues.",
+    "glasses": "Glasses detected. Verification continues.",
+    "sunglasses": "Sunglasses detected. Please remove sunglasses for clearer verification.",
 }
 NO_FACE_RESULT = {
     "label": "no_face",
     "confidence": 0.0,
     "decision": "block",
-    "message": "No face detected - please face the camera",
+    "message": "No face detected. Please face the camera.",
     "face_box": None,
 }
-SUNGLASSES_HARD_BLOCK_THRESHOLD = 0.90
+SUNGLASSES_ADVISORY_CONFIDENCE_THRESHOLD = 0.90
 
 
 class GlassesDetector:
@@ -58,7 +58,7 @@ class GlassesDetector:
     The attendance system may pass either a cropped face image to
     predict_with_decision() or a full webcam frame to predict_from_frame().
     This class handles model loading, preprocessing, prediction, and the
-    verification decision text needed by UI or orchestration code.
+    advisory status text needed by UI or orchestration code.
     """
 
     def __init__(self, model_path=None):
@@ -97,10 +97,10 @@ class GlassesDetector:
         return label, confidence
 
     def predict_with_decision(self, face_bgr):
-        """Return prediction output together with verification decision metadata."""
+        """Return prediction output together with advisory status metadata."""
         label, confidence = self.predict(face_bgr)
 
-        # Returning message and decision here avoids duplicating policy text in
+        # Returning message and decision here avoids duplicating status text in
         # the webcam UI or main attendance workflow.
         return {
             "label": label,
@@ -110,7 +110,7 @@ class GlassesDetector:
         }
 
     def decision(self, label):
-        """Map the predicted eyewear label to allow/block verification behaviour."""
+        """Map the predicted eyewear label to the existing integration status."""
         if label not in DECISIONS:
             raise ValueError(f"Unknown glasses label: {label}")
 
@@ -282,14 +282,14 @@ class GlassesDetector:
         return face_crop, crop_box
 
     def _apply_full_frame_decision(self, result):
-        """Use a softer full-frame decision for uncertain sunglasses results."""
+        """Use advisory wording for uncertain sunglasses results."""
         if (
             result["label"] == "sunglasses"
-            and result["confidence"] < SUNGLASSES_HARD_BLOCK_THRESHOLD
+            and result["confidence"] < SUNGLASSES_ADVISORY_CONFIDENCE_THRESHOLD
         ):
             result["decision"] = "warning"
             result["message"] = (
-                "Possible sunglasses detected - please adjust position or lighting"
+                "Sunglasses detected. Please remove sunglasses for clearer verification."
             )
 
         return result
