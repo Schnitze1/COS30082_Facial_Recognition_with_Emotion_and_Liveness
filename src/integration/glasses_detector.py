@@ -13,6 +13,7 @@ Advisory status:
     sunglasses -> advisory
 """
 
+from collections import Counter, deque
 from pathlib import Path
 
 import cv2
@@ -50,6 +51,8 @@ NO_FACE_RESULT = {
     "face_box": None,
 }
 SUNGLASSES_ADVISORY_CONFIDENCE_THRESHOLD = 0.90
+GLASSES_STABILITY_WINDOW = 7
+GLASSES_STABILITY_MIN_FRAMES = 4
 
 
 class GlassesDetector:
@@ -76,6 +79,8 @@ class GlassesDetector:
         print(f"Model input size: {self.img_size[0]}x{self.img_size[1]}")
         self.face_detector = self.build_face_detector()
         self.last_face_crop = None
+        self.glasses_history = deque(maxlen=GLASSES_STABILITY_WINDOW)
+        self.stable_glasses_result = None
 
     def predict(self, face_bgr):
         """
@@ -152,6 +157,7 @@ class GlassesDetector:
         """
         if frame_bgr is None or frame_bgr.size == 0:
             self.last_face_crop = None
+            self.reset_frame_stability()
             return dict(NO_FACE_RESULT)
 
         faces = self.detect_faces(frame_bgr)
@@ -159,12 +165,14 @@ class GlassesDetector:
 
         if face_box is None:
             self.last_face_crop = None
+            self.reset_frame_stability()
             return dict(NO_FACE_RESULT)
 
         face_crop, crop_box = self.crop_face_with_margin(frame_bgr, face_box)
 
         if face_crop is None or face_crop.size == 0:
             self.last_face_crop = None
+            self.reset_frame_stability()
             return dict(NO_FACE_RESULT)
 
         result = self.predict_with_decision(face_crop)
@@ -172,7 +180,12 @@ class GlassesDetector:
         result["face_box"] = crop_box
         self.last_face_crop = face_crop
 
-        return result
+        return self._stabilize_frame_result(result)
+
+    def reset_frame_stability(self):
+        """Clear webcam-frame label stability when no usable face is present."""
+        self.glasses_history.clear()
+        self.stable_glasses_result = None
 
     def build_face_detector(self):
         """Load OpenCV's built-in frontal face Haar Cascade."""
@@ -293,6 +306,43 @@ class GlassesDetector:
             )
 
         return result
+
+    def _stabilize_frame_result(self, result):
+        """Return a steadier webcam result using recent full-frame predictions."""
+        self.glasses_history.append(
+            {
+                "label": result["label"],
+                "confidence": result["confidence"],
+                "decision": result["decision"],
+                "message": result["message"],
+            }
+        )
+
+        label_counts = Counter(item["label"] for item in self.glasses_history)
+        selected_label, selected_count = label_counts.most_common(1)[0]
+
+        if (
+            self.stable_glasses_result is None
+            or selected_count >= GLASSES_STABILITY_MIN_FRAMES
+        ):
+            matching_results = [
+                item for item in self.glasses_history if item["label"] == selected_label
+            ]
+            average_confidence = float(
+                np.mean([item["confidence"] for item in matching_results])
+            )
+            latest_selected_result = matching_results[-1]
+            self.stable_glasses_result = {
+                "label": selected_label,
+                "confidence": average_confidence,
+                "decision": latest_selected_result["decision"],
+                "message": latest_selected_result["message"],
+            }
+
+        stable_result = dict(self.stable_glasses_result)
+        stable_result["face_box"] = result["face_box"]
+
+        return stable_result
 
     def _get_model_input_size(self):
         """Read and validate the expected model input size from the saved model."""

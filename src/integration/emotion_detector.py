@@ -172,7 +172,7 @@ class StableEmotionTracker:
             self.candidate_confidence = top_confidence
             self.candidate_count = 1
 
-        if self.candidate_count >= self.required_frames:
+        if self.candidate_count == self.required_frames:
             self.current_emotion = self.candidate_emotion
             self.current_confidence = self.candidate_confidence
 
