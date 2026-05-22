@@ -3,7 +3,7 @@
         "precision": 1.0,
         "recall": 1.0,
         "f1-score": 1.0,
-        "support": 161.0
+        "support": 165.0
     },
     "no_glasses": {
         "precision": 1.0,
@@ -22,12 +22,12 @@
         "precision": 1.0,
         "recall": 1.0,
         "f1-score": 1.0,
-        "support": 481.0
+        "support": 485.0
     },
     "weighted avg": {
         "precision": 1.0,
         "recall": 1.0,
         "f1-score": 1.0,
-        "support": 481.0
+        "support": 485.0
     }
 }
