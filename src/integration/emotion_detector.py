@@ -37,9 +37,24 @@ except ModuleNotFoundError as exc:
 # Paths and model configuration
 # ----------------------------------------------------------------------
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-DEFAULT_MODEL_PATH = os.path.join(
-    PROJECT_ROOT, "models", "emotion_detection", "residual", "emotion_cnn_residual.h5"
-)
+EMOTION_MODEL_PATHS = {
+    "residual": os.path.join(
+        PROJECT_ROOT,
+        "models",
+        "emotion_detection",
+        "residual",
+        "emotion_cnn_residual.h5",
+    ),
+    "vanilla": os.path.join(
+        PROJECT_ROOT,
+        "models",
+        "emotion_detection",
+        "vanilla",
+        "emotion_cnn_vanilla.h5",
+    ),
+}
+DEFAULT_MODEL_NAME = "residual"
+DEFAULT_MODEL_PATH = EMOTION_MODEL_PATHS[DEFAULT_MODEL_NAME]
 
 
 # Keep this order aligned with the training scripts so probability index 0
@@ -98,6 +113,23 @@ NEWER_KERAS_KEYS_TO_DROP = {
     "synchronized",
     "quantization_config",
 }
+
+
+def resolve_emotion_model_path(model_path=None, model_name=DEFAULT_MODEL_NAME):
+    """Resolve a GUI-friendly emotion model name or explicit model path."""
+    if model_path is not None:
+        model_key = str(model_path).lower()
+
+        if model_key in EMOTION_MODEL_PATHS:
+            return EMOTION_MODEL_PATHS[model_key]
+
+        return model_path
+
+    if model_name not in EMOTION_MODEL_PATHS:
+        available = ", ".join(sorted(EMOTION_MODEL_PATHS))
+        raise ValueError(f"Unknown emotion model name: {model_name}. Choose: {available}")
+
+    return EMOTION_MODEL_PATHS[model_name]
 
 
 # ----------------------------------------------------------------------
@@ -172,7 +204,7 @@ class StableEmotionTracker:
             self.candidate_confidence = top_confidence
             self.candidate_count = 1
 
-        if self.candidate_count >= self.required_frames:
+        if self.candidate_count == self.required_frames:
             self.current_emotion = self.candidate_emotion
             self.current_confidence = self.candidate_confidence
 
@@ -208,6 +240,7 @@ class EmotionDetector:
     def __init__(
         self,
         model_path=None,
+        model_name=DEFAULT_MODEL_NAME,
         preprocess_mode="rescale",
         smoothing=3,
         stable_frames=5,
@@ -216,8 +249,10 @@ class EmotionDetector:
         face_margin=0.20,
         min_face_size=80,
     ):
-        if model_path is None:
-            model_path = DEFAULT_MODEL_PATH
+        model_path = resolve_emotion_model_path(
+            model_path=model_path,
+            model_name=model_name,
+        )
 
         self.model_path = os.path.abspath(model_path)
         self.preprocess_mode = preprocess_mode

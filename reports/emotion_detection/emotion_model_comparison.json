@@ -1,7 +1,7 @@
 [
     {
         "model": "vanilla",
-        "model_path": "models\\emotion_cnn_vanilla.keras",
+        "model_path": "models\\emotion_detection\\vanilla\\emotion_cnn_vanilla.keras",
         "input_height": 96,
         "input_width": 96,
         "internal_rescaling_detected": false,
@@ -23,7 +23,7 @@
     },
     {
         "model": "residual",
-        "model_path": "models\\emotion_cnn_residual.keras",
+        "model_path": "models\\emotion_detection\\residual\\emotion_cnn_residual.keras",
         "input_height": 128,
         "input_width": 128,
         "internal_rescaling_detected": false,
