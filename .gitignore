@@ -14,7 +14,6 @@ __pycache__/
 data/
 
 # Model checkpoints and logs
-models/
 logs/
 
 # Jupyter
