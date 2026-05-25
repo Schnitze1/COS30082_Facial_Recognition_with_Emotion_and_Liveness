@@ -23,3 +23,7 @@ logs/
 # IDEs
 .vscode/
 .idea/
+
+# Documents and Texts
+*.pdf
+*.txt
