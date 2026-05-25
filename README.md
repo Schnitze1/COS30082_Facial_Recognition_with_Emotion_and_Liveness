@@ -1,6 +1,4 @@
-# Intelligent Systems - Hybrid Facial Recognition Pipeline
-
-This project is a high-definition, web-based hybrid attendance system capable of simultaneous identity tracking, automated enrollment, spatiotemporal lip reading, and emotion detection using live webcam feeds. It utilizes a suite of custom-trained Deep Learning models (CNN, MLP, LSTM, and 3D-CNNs) built from scratch.
+# Intelligent Systems - Integrated AI Training & Control Dashboard
 
 ## Instructions
 
@@ -9,8 +7,7 @@ To get a local copy up and running, follow these simple steps.
 ### Prerequisites
 
 * Python 3.8+
-* pip (Python package installer)
-* A local webcam
+* Laptop webcam
 
 ### Installation & Setup
 
@@ -20,9 +17,9 @@ To get a local copy up and running, follow these simple steps.
     cd COS30082_Facial_Recognition_with_Emotion_and_Liveness
     ```
 
-2.  **Create and activate a virtual environment (recommended):**
+2.  **Create and activate a virtual environment:**
     * **Windows (PowerShell):**
-        ```sh
+        ```powershell
         python -m venv .venv
         .\.venv\Scripts\activate
         ```
@@ -32,90 +29,75 @@ To get a local copy up and running, follow these simple steps.
     pip install -r requirements.txt
     ```
 
-4.  **Run the automated data & training pipeline (Optional):**
+4.  **Download Required External Datasets:**
+    For the training scripts to function, you must manually download the following datasets via Kaggle and place them in the `data/` folder:
+    * **AffectNet Dataset**: Place the extracted folders in `data/AffectNet/`
+    * **Glasses Detection Dataset**: Place the extracted folders in `data/glass_detection/Glasses_dataset/`
+    * **RAVDESS Dataset**: Place the extracted folders in `data/RAVDESS/`
+    * **Large Crowdcollected Face Anti-Spoofing Dataset**: Place the extracted folders in `data/lfw/`
+    * **Labelled Faces in the Wild (LFW) Dataset**: Place the extracted folders in `data/lfw/`
+
+5.  **Run the Dashboard:**
     ```sh
-    python main.py --all
-    ```
-    *This will extract video sequences, generate cropped facial datasets, and train both Identity and Lip Reading models automatically.*
-
-5.  **Run the Flask application:**
-    ```sh
-    cd src/gui
-    python app.py
+    python src/gui/desktop_app.py
     ```
 
-6.  Open your web browser and navigate to `http://127.0.0.1:5000` to view the live Hybrid Attendance dashboard.
+## Application Features
 
-## Project Architecture
+- **Automated Background Training**: Use the dashboard to dynamically initiate Python subprocesses that train your models in the background. The progress bar updates in real-time by parsing terminal output.
+- **Dynamic Model Selection**: Instead of hardcoded paths, use dropdown menus to select and hot-swap active model architectures (e.g. FNN vs MLP) on the fly without restarting the application.
+- **Lip-Reading Vocal Thresholding**: Uses sequence difference monitoring across 15 frames to prevent lip-reading models from inferencing during idle periods.
+- **Real-Time Event Logging**: Every entrance, exit, spoken phrase, spoof attempt, and detected emotion is time-stamped and recorded automatically to `src/attendance/attendance_log.csv`.
 
-The application is built with a Python Flask backend serving a dynamic MJPEG stream via OpenCV. The backend encapsulates multiple OOP classes dedicated to model inference, temporal tracking, and CSV event logging.
+---
 
-### Application Flow
+## Model Architectures and Findings
 
-1.  **Webcam Capture**: Frames are grabbed using OpenCV.
-2.  **Face Detection**: A Haar Cascade classifier detects faces in the frame.
-3.  **Temporal Tracking**: Faces are mapped frame-by-frame using Euclidean distance and matched to unique trackers. Unknown faces are automatically enrolled after 5 seconds of continuous tracking.
-4.  **Model Inference**:
-    - **Identity (MLP)**: Upper face crops (15% margin) are passed to an embedding model (MLP). Predictions are measured using Cosine Similarity.
-    - **Emotion (CNN)**: Full facial crops are passed to the teammate's Emotion CNN to estimate emotional states (Happy, Neutral, Sad, Anger, Fear, Surprise, Disgust, Contempt).
-    - **Lip Reading (CNN-LSTM)**: The lower 50% of the face is isolated, resized, and appended to a rolling 15-frame buffer. The 3D sequence is fed into a Spatiotemporal Lip-Reading network.
-5.  **Display Result**: Bounding boxes, labels, emojis, and predicted sentences are overlaid on the frame, and the processed frame is encoded as a JPEG and sent to the Flask GUI via MJPEG streaming.
+### 1. Emotion Detection
+The Emotion Detection module was developed using the AffectNet dataset. We explored two primary architectures to balance performance and feature extraction.
+
+#### Vanilla CNN
+Developed as a baseline architecture, it uses four convolutional blocks with progressively increasing filters from 32 to 256. It captures low-level visual cues (edges, contours) early and deeper expression-specific patterns later. It utilizes Batch Normalisation and Dropout to reduce overfitting, and replaces large flattening layers with Global Average Pooling.
+
+![Vanilla CNN](reports/architectures/vanilla_cnn.png)
+
+#### Residual CNN
+A deeper alternative designed for more complex facial expressions. The addition of residual blocks with skip connections mitigates information loss. Furthermore, lightweight squeeze-and-excitation blocks recalibrate channel-level feature importance. It was trained using label smoothing, AdamW optimisation, weight decay, and cosine learning-rate decay.
+
+![Residual CNN](reports/architectures/residual_cnn.png)
+
+### 2. Identity Verification (MLP vs FNN)
+Identity embeddings were evaluated to distinguish unique actors. Below are the learning curves and ROC curves representing the optimal performance threshold of the MLP network.
+
+**MLP Learning Curves:**
+![MLP Learning Curves](reports/mlp/mlp_best_learning_curves.png)
+
+**MLP ROC Curve:**
+![MLP ROC Curve](reports/mlp/mlp_best_roc_curve.png)
+
+### 3. Spatiotemporal Lip Reading
+We evaluated several sequence-modeling networks (CNN-LSTM, CNN-GRU, 3D-CNN) over 15-frame rolling buffers to transcribe spoken sequences. Below is a comparative performance chart of the lip reading architectures.
+
+![Lip Models Comparison](reports/lip_reading/lip_models_comparison.png)
+
+---
 
 ## Project Structure
 
-The project is organized into distinct modules for data extraction, models, evaluation, integration, and the GUI.
-
 ```text
 COS30082_Facial_Recognition_with_Emotion_and_Liveness
-┣ data
-┃ ┣ archive (4)                 # Raw video dataset
-┃ ┣ classification_data         # Processed Face crops
-┃ ┣ lip_sequence_data           # Processed Spatiotemporal numpy arrays
-┃ ┗ verification_data           # Pairs used for AUC testing
-┣ logs
-┃ ┗ history                     # Saved JSON training histories
-┣ models
-┃ ┣ checkpoints                 # Saved model .h5 weights
-┃ ┣ emotion_detection           # Teammate's Emotion models
-┃ ┗ glasses_detection           # Teammate's Glasses models
+┣ data                          # Raw datasets (AffectNet, Glasses, RAVDESS)
+┣ logs                          # Saved JSON training histories
+┣ models                        # Checkpoints and exported models
+┣ reports                       # Saved ROC curves, confusion matrices, architecture charts
 ┣ src
-┃ ┣ attendance
-┃ ┃ ┣ faces_db                  # Automatically enrolled actor faces
-┃ ┃ ┗ attendance_log.csv        # Logged ENTER, EXIT, and SPOKEN events
-┃ ┣ data
-┃ ┃ ┣ build_dataset.py
-┃ ┃ ┗ build_lip_sequence_dataset.py
-┃ ┣ evaluation
-┃ ┃ ┣ evaluate_lip_models.py
-┃ ┃ ┣ evaluator.py
-┃ ┃ ┗ verification.py
+┃ ┣ attendance                  # faces_db and attendance_log.csv
+┃ ┣ data                        # Dataset building scripts
+┃ ┣ evaluation                  # Verification and model evaluation scripts
 ┃ ┣ gui
-┃ ┃ ┣ templates
-┃ ┃ ┃ ┗ index.html              # HD Glassmorphism UI
-┃ ┃ ┗ app.py                    # Flask Web Server
-┃ ┣ integration
-┃ ┃ ┣ emotion_detector.py       # Teammate's OOP Emotion pipeline
-┃ ┃ ┣ hybrid_attendance.py      # Core MJPEG streaming pipeline
-┃ ┃ ┗ webcam_demo.py
-┃ ┣ models
-┃ ┃ ┣ base_model.py
-┃ ┃ ┣ fnn.py
-┃ ┃ ┣ lip_cnn_gru.py
-┃ ┃ ┣ lip_cnn_lstm.py
-┃ ┃ ┣ lip_conv3d.py
-┃ ┃ ┗ mlp.py
-┃ ┗ training
-┃ ┃ ┣ base_trainer.py
-┃ ┃ ┣ train_fnn.py
-┃ ┃ ┣ train_lip_models.py
-┃ ┃ ┗ train_mlp.py
-┣ main.py                       # Pipeline Manager
+┃ ┃ ┗ desktop_app.py            # FreeSimpleGUI Training Dashboard
+┃ ┣ integration                 # Emotion/Glasses/Lip-Reading inference wrappers
+┃ ┣ models                      # OOP Architecture definitions
+┃ ┗ training                    # Headless training pipelines (train_mlp.py, etc.)
 ┗ requirements.txt
 ```
-
-## Features
-
-- **Automated Enrolment**: Unrecognized actors are assigned an "Unknown" tag and automatically added to the face database (`faces_db`) if they remain in frame for > 5.0 seconds.
-- **Vocal Movement Thresholding**: The Lip-Reading model computes the Mean Absolute Difference across frames to ensure inference only runs when the actor's mouth is actually moving.
-- **Glassmorphism UI**: Uses a high-end, responsive dark-mode Web UI with dynamic glowing accents to view the webcam stream.
-- **Event Logging**: Every entrance, exit, and spoken phrase is time-stamped and recorded automatically to `attendance_log.csv`.
