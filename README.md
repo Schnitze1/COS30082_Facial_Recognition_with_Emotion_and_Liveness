@@ -1,4 +1,29 @@
-# Intelligent Systems - Integrated AI Training & Control Dashboard
+# COS30082-Applied Machine Learning - Facial Recognition with Emotion and Liveness
+
+## System Architecture
+
+The following diagram illustrates the real-time inference pipeline of the application:
+
+```mermaid
+graph TD
+    A[Webcam Feed] --> B[Face Detection Cascade]
+    B --> C{Face Extracted}
+    
+    C --> D[Identity Verification]
+    C --> E[Emotion Detection]
+    C --> F[Anti-Spoofing Detector]
+    C --> G[15-Frame Lip Buffer]
+    
+    G --> H[Spatiotemporal Lip Model]
+    
+    D --> I[Event Pipeline]
+    E --> I
+    F --> I
+    H --> I
+    
+    I --> J[(attendance_log.csv)]
+    I --> K[FreeSimpleGUI Dashboard]
+```
 
 ## Instructions
 
@@ -79,6 +104,15 @@ Identity embeddings were evaluated to distinguish unique actors. Below are the l
 We evaluated several sequence-modeling networks (CNN-LSTM, CNN-GRU, 3D-CNN) over 15-frame rolling buffers to transcribe spoken sequences. Below is a comparative performance chart of the lip reading architectures.
 
 ![Lip Models Comparison](reports/lip_reading/lip_models_comparison.png)
+
+---
+
+## Troubleshooting
+
+- **`FileNotFoundError: Missing split directory`**: This occurs when attempting to train a model without the corresponding dataset. Ensure you have downloaded the datasets specified in the *Installation & Setup* section and placed them in the exact directory structures required.
+- **Models failing to load on startup**: If the dashboard starts but the models fail to load, ensure the `models/checkpoints/` directory contains the required `.h5` or `.keras` weights. If they are missing, you must run the background training scripts using the GUI first.
+- **Webcam feed not appearing**: Ensure no other application (like Zoom or Teams) is currently using your webcam, as OpenCV requires exclusive access to the camera device.
+- **Lip reading is inaccurate or not triggering**: The lip reading module requires a well-lit environment and the subject to be directly facing the camera. It also enforces a vocal threshold limit, meaning you must speak clearly for a continuous 15 frames for inference to trigger.
 
 ---
 
