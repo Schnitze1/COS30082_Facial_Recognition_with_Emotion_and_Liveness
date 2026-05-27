@@ -139,8 +139,9 @@ class EmotionDetectorEfficientNet:
     def _preprocess(self, face_bgr: np.ndarray) -> np.ndarray:
         face_rgb = cv2.cvtColor(face_bgr, cv2.COLOR_BGR2RGB)
         face_resized = cv2.resize(face_rgb, self.input_size, interpolation=cv2.INTER_AREA)
-        face_float = face_resized.astype(np.float32) / 255.0
-        return np.expand_dims(face_float, axis=0)
+        face_float = face_resized.astype(np.float32)  # keep 0-255 range for preprocess_input
+        face_preprocessed = tf.keras.applications.efficientnet.preprocess_input(face_float)
+        return np.expand_dims(np.array(face_preprocessed), axis=0)
 
     def _top_predictions(self, probs: np.ndarray, top_k: int = 3):
         indices = np.argsort(probs)[::-1][:top_k]

@@ -36,7 +36,7 @@ EMOTION_MODELS = {
     'Residual CNN':       'models/emotion_detection/residual/emotion_cnn_residual.keras',
     'Vanilla CNN':        'models/emotion_detection/vanilla/emotion_cnn_vanilla.keras',
     'EfficientNet-B0':    'models/emotion_detection_2/efficientnet/emotion_efficientnet.keras',
-    'Hybrid Transformer': 'models/emotion_detection_2/hybrid_transformer/emotion_hybrid_transformer.keras',
+    'Hybrid Transformer': 'models/emotion_detection_2/hybrid_transformer/emotion_hybrid_transformer.h5',
 }
 LIP_MODELS = {
     'CNN-LSTM': 'models/checkpoints/LipCNNLSTM_best.h5',
@@ -44,8 +44,8 @@ LIP_MODELS = {
     'Conv3D': 'models/checkpoints/LipConv3D_best.h5'
 }
 SPOOF_MODELS = {
-    'Residual CNN (.keras)': 'models/checkpoints/glasses_detector_residual_cnn.keras',
-    'Residual CNN (.h5)': 'models/checkpoints/glasses_detector_residual_cnn.h5'
+    'Residual CNN (.keras)': 'models/glasses_detection/residual/glasses_detector_residual_cnn.keras',
+    'Residual CNN (.h5)':    'models/glasses_detection/residual/glasses_detector_residual_cnn.h5',
 }
 
 TRAINING_SCRIPTS = {

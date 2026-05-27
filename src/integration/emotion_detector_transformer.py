@@ -36,8 +36,8 @@ EMOTION_FEEDBACK = {
 }
 
 DEFAULT_MODEL_PATHS = [
-    "models/emotion_detection_2/hybrid_transformer/emotion_hybrid_transformer.keras",
     "models/emotion_detection_2/hybrid_transformer/emotion_hybrid_transformer.h5",
+    "models/emotion_detection_2/hybrid_transformer/emotion_hybrid_transformer.keras",
 ]
 
 
@@ -46,11 +46,15 @@ DEFAULT_MODEL_PATHS = [
 # ---------------------------------------------------------------------------
 
 class PatchPositionEmbedding(layers.Layer):
-    def __init__(self, num_patches: int, embedding_dim: int, **kwargs):
+    def __init__(self, num_patches: int, embed_dim: int, **kwargs):
         super().__init__(**kwargs)
         self.num_patches = num_patches
-        self.embedding_dim = embedding_dim
-        self.pos_embed = layers.Embedding(num_patches, embedding_dim)
+        self.embed_dim = embed_dim
+        self.pos_embed = layers.Embedding(num_patches, embed_dim)
+
+    def build(self, input_shape):
+        self.pos_embed.build((self.num_patches,))
+        super().build(input_shape)
 
     def call(self, x):
         positions = tf.range(start=0, limit=tf.shape(x)[1], delta=1)
@@ -58,31 +62,40 @@ class PatchPositionEmbedding(layers.Layer):
 
     def get_config(self):
         cfg = super().get_config()
-        cfg.update({"num_patches": self.num_patches, "embedding_dim": self.embedding_dim})
+        cfg.update({"num_patches": self.num_patches, "embed_dim": self.embed_dim})
         return cfg
 
 
 class TransformerBlock(layers.Layer):
-    def __init__(self, embedding_dim: int, num_heads: int, ff_dim: int, dropout_rate: float = 0.1, **kwargs):
+    def __init__(self, embed_dim: int, num_heads: int, ff_dim: int, dropout: float = 0.1, **kwargs):
         super().__init__(**kwargs)
-        self.embedding_dim = embedding_dim
+        self.embed_dim = embed_dim
         self.num_heads = num_heads
         self.ff_dim = ff_dim
-        self.dropout_rate = dropout_rate
+        self.dropout = dropout
 
         self.attention = layers.MultiHeadAttention(
             num_heads=num_heads,
-            key_dim=embedding_dim // num_heads,
-            dropout=dropout_rate,
+            key_dim=embed_dim // num_heads,
+            dropout=dropout,
         )
         self.ffn = tf.keras.Sequential([
             layers.Dense(ff_dim, activation="relu"),
-            layers.Dense(embedding_dim),
+            layers.Dense(embed_dim),
         ])
         self.norm1 = layers.LayerNormalization(epsilon=1e-6)
         self.norm2 = layers.LayerNormalization(epsilon=1e-6)
-        self.drop1 = layers.Dropout(dropout_rate)
-        self.drop2 = layers.Dropout(dropout_rate)
+        self.drop1 = layers.Dropout(dropout)
+        self.drop2 = layers.Dropout(dropout)
+
+    def build(self, input_shape):
+        self.norm1.build(input_shape)
+        self.norm2.build(input_shape)
+        self.drop1.build(input_shape)
+        self.drop2.build(input_shape)
+        self.attention.build(input_shape)
+        self.ffn.build(input_shape)
+        super().build(input_shape)
 
     def call(self, x, training=False):
         normed = self.norm1(x)
@@ -97,10 +110,10 @@ class TransformerBlock(layers.Layer):
     def get_config(self):
         cfg = super().get_config()
         cfg.update({
-            "embedding_dim": self.embedding_dim,
+            "embed_dim": self.embed_dim,
             "num_heads": self.num_heads,
             "ff_dim": self.ff_dim,
-            "dropout_rate": self.dropout_rate,
+            "dropout": self.dropout,
         })
         return cfg
 
@@ -212,7 +225,12 @@ class EmotionDetectorTransformer:
         self.input_size = self._get_input_size()
 
     def _load_model(self) -> tf.keras.Model:
-        candidates = [self.model_path] if self.model_path else DEFAULT_MODEL_PATHS
+        if self.model_path:
+            # Prefer .h5 over .keras for better weight compatibility
+            base = self.model_path.rsplit(".", 1)[0]
+            candidates = [base + ".h5", base + ".keras"]
+        else:
+            candidates = DEFAULT_MODEL_PATHS
         for path in candidates:
             if path and os.path.exists(path):
                 print(f"[EmotionDetectorTransformer] Loading model: {path}")

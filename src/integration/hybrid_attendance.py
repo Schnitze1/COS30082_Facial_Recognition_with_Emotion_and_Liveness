@@ -53,7 +53,7 @@ class HybridAttendanceSystem:
             "identity_model_path": 'models/checkpoints/mlp_best.h5',
             "lip_model_path": 'models/checkpoints/LipCNNLSTM_best.h5',
             "emotion_model_name": 'models/emotion_detection/residual/emotion_cnn_residual.keras',
-            "glasses_model_path": 'models/checkpoints/glasses_detector_residual_cnn.keras'
+            "glasses_model_path": 'models/glasses_detection/residual/glasses_detector_residual_cnn.keras'
         }
 
     def _make_emotion_detector(self, model_path):
