@@ -53,7 +53,7 @@ class PatchPositionEmbedding(layers.Layer):
         self.pos_embed = layers.Embedding(num_patches, embed_dim)
 
     def build(self, input_shape):
-        self.pos_embed.build((self.num_patches,))
+        self.pos_embed.build((None,))
         super().build(input_shape)
 
     def call(self, x):
@@ -93,7 +93,8 @@ class TransformerBlock(layers.Layer):
         self.norm2.build(input_shape)
         self.drop1.build(input_shape)
         self.drop2.build(input_shape)
-        self.attention.build(input_shape)
+        # Keras 3: MultiHeadAttention.build takes (query_shape, value_shape) separately
+        self.attention.build(input_shape, input_shape)
         self.ffn.build(input_shape)
         super().build(input_shape)
 
@@ -167,7 +168,7 @@ class PredictionSmoother:
 
 
 class StableEmotionTracker:
-    def __init__(self, stable_frames: int = 5, min_confidence: float = 0.40, min_margin: float = 0.08):
+    def __init__(self, stable_frames: int = 3, min_confidence: float = 0.20, min_margin: float = 0.05):
         self.stable_frames = stable_frames
         self.min_confidence = min_confidence
         self.min_margin = min_margin
@@ -210,9 +211,9 @@ class EmotionDetectorTransformer:
         self,
         model_path: str | None = None,
         smoothing: int = 3,
-        stable_frames: int = 5,
-        min_confidence: float = 0.40,
-        min_margin: float = 0.08,
+        stable_frames: int = 3,
+        min_confidence: float = 0.20,
+        min_margin: float = 0.05,
     ):
         self.model_path = model_path
         self.smoother = PredictionSmoother(window_size=smoothing)
@@ -226,7 +227,6 @@ class EmotionDetectorTransformer:
 
     def _load_model(self) -> tf.keras.Model:
         if self.model_path:
-            # Prefer .h5 over .keras for better weight compatibility
             base = self.model_path.rsplit(".", 1)[0]
             candidates = [base + ".h5", base + ".keras"]
         else:
@@ -280,6 +280,11 @@ class EmotionDetectorTransformer:
 
         batch = self._preprocess(face_bgr)
         raw_probs = self.model.predict(batch, verbose=0)[0]
+
+        # Guard against NaN/Inf from corrupted model weights
+        if not np.all(np.isfinite(raw_probs)):
+            raw_probs = np.ones(len(CLASSES), dtype=np.float32) / len(CLASSES)
+
         smooth_probs = self.smoother.update(raw_probs)
 
         top = self._top_predictions(smooth_probs)

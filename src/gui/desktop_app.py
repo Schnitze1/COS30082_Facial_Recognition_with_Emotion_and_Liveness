@@ -33,9 +33,9 @@ IDENTITY_MODELS = {
     'FNN': 'models/checkpoints/fnn_best.h5'
 }
 EMOTION_MODELS = {
-    'Residual CNN':       'models/emotion_detection/residual/emotion_cnn_residual.keras',
-    'Vanilla CNN':        'models/emotion_detection/vanilla/emotion_cnn_vanilla.keras',
-    'EfficientNet-B0':    'models/emotion_detection_2/efficientnet/emotion_efficientnet.keras',
+    'Residual CNN':       'models/emotion_detection/residual/emotion_cnn_residual.h5',
+    'Vanilla CNN':        'models/emotion_detection/vanilla/emotion_cnn_vanilla.h5',
+    'EfficientNet-B0':    'models/emotion_detection_2/efficientnet/emotion_efficientnet.h5',
     'Hybrid Transformer': 'models/emotion_detection_2/hybrid_transformer/emotion_hybrid_transformer.h5',
 }
 LIP_MODELS = {
@@ -44,8 +44,7 @@ LIP_MODELS = {
     'Conv3D': 'models/checkpoints/LipConv3D_best.h5'
 }
 SPOOF_MODELS = {
-    'Residual CNN (.keras)': 'models/glasses_detection/residual/glasses_detector_residual_cnn.keras',
-    'Residual CNN (.h5)':    'models/glasses_detection/residual/glasses_detector_residual_cnn.h5',
+    'Residual CNN': 'models/glasses_detection/residual/glasses_detector_residual_cnn.h5',
 }
 
 TRAINING_SCRIPTS = {
@@ -58,8 +57,7 @@ TRAINING_SCRIPTS = {
     'CNN-LSTM': 'src/training/train_lip_models.py',
     'CNN-GRU': 'src/training/train_lip_models.py',
     'Conv3D': 'src/training/train_lip_models.py',
-    'Residual CNN (.keras)': 'src/training/train_glasses_detector.py',
-    'Residual CNN (.h5)': 'src/training/train_glasses_detector.py'
+    'Residual CNN': 'src/training/train_glasses_detector.py'
 }
 
 def create_sidebar_frame(title, layout):
@@ -95,7 +93,7 @@ def build_layout():
 
     spoof_layout = [
         [sg.Checkbox("Glasses Active", default=False, key="-SPOOF_ACTIVE-", background_color=PAPER_COLOR, text_color=TEXT_COLOR, enable_events=True)],
-        [sg.Combo(list(SPOOF_MODELS.keys()), default_value='Residual CNN (.keras)', key="-SPOOF_MODEL-", background_color=BG_COLOR, text_color=TEXT_COLOR, size=(30, 1), readonly=True, enable_events=True)],
+        [sg.Combo(list(SPOOF_MODELS.keys()), default_value='Residual CNN', key="-SPOOF_MODEL-", background_color=BG_COLOR, text_color=TEXT_COLOR, size=(30, 1), readonly=True, enable_events=True)],
         [_status_text("-SPOOF_STATUS-")],
     ]
 

@@ -31,8 +31,8 @@ EMOTION_FEEDBACK = {
 }
 
 DEFAULT_MODEL_PATHS = [
-    "models/emotion_detection_2/efficientnet/emotion_efficientnet.keras",
     "models/emotion_detection_2/efficientnet/emotion_efficientnet.h5",
+    "models/emotion_detection_2/efficientnet/emotion_efficientnet.keras",
 ]
 
 
