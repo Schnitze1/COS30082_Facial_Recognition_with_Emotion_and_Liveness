@@ -1,12 +1,17 @@
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+
 import cv2
 import numpy as np
 import tensorflow as tf
-import os
 import csv
 import time
 from datetime import datetime
 from collections import deque
 from src.integration.emotion_detector import EmotionDetector
+from src.integration.emotion_detector_efficientnet import EmotionDetectorEfficientNet
+from src.integration.emotion_detector_transformer import EmotionDetectorTransformer
 from src.integration.glasses_detector import GlassesDetector
 
 class HybridAttendanceSystem:
@@ -47,9 +52,18 @@ class HybridAttendanceSystem:
             "lip_movement_threshold": 8.0,
             "identity_model_path": 'models/checkpoints/mlp_best.h5',
             "lip_model_path": 'models/checkpoints/LipCNNLSTM_best.h5',
-            "emotion_model_name": 'models/checkpoints/emotion_cnn_residual.h5',
+            "emotion_model_name": 'models/emotion_detection/residual/emotion_cnn_residual.keras',
             "glasses_model_path": 'models/checkpoints/glasses_detector_residual_cnn.keras'
         }
+
+    def _make_emotion_detector(self, model_path):
+        """Instantiate the correct detector class based on the model filename."""
+        name = os.path.basename(model_path).lower()
+        if "efficientnet" in name:
+            return EmotionDetectorEfficientNet(model_path=model_path)
+        if "transformer" in name:
+            return EmotionDetectorTransformer(model_path=model_path)
+        return EmotionDetector(model_path=model_path)
 
     def reload_models(self):
         """
@@ -113,7 +127,7 @@ class HybridAttendanceSystem:
             self.lip_model = None
 
         try:
-            self.emotion_detector = EmotionDetector(model_path=self.config["emotion_model_name"])
+            self.emotion_detector = self._make_emotion_detector(self.config["emotion_model_name"])
         except Exception as e:
             print(f"Warning: Failed to load Emotion Detector: {e}")
             self.emotion_detector = None
@@ -286,7 +300,7 @@ class HybridAttendanceSystem:
                 info["emotion_emoji"] = ""
 
             # Identity pathway
-            if self.config["identity_active"]:
+            if self.config["identity_active"] and self.embedding_model is not None:
                 y_id = y + int(0.15 * h)
                 h_id = int(0.70 * h)
                 x_id = x + int(0.15 * w)
@@ -386,4 +400,8 @@ class HybridAttendanceSystem:
         ret, frame = cap.read()
         if not ret:
             return False, None
-        return True, self.process_frame(frame)
+        try:
+            return True, self.process_frame(frame)
+        except Exception as e:
+            print(f"Frame processing error: {e}")
+            return True, frame

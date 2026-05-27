@@ -33,8 +33,10 @@ IDENTITY_MODELS = {
     'FNN': 'models/checkpoints/fnn_best.h5'
 }
 EMOTION_MODELS = {
-    'Residual CNN': 'models/checkpoints/emotion_cnn_residual.h5',
-    'Vanilla CNN': 'models/checkpoints/emotion_cnn_vanilla.h5'
+    'Residual CNN':       'models/emotion_detection/residual/emotion_cnn_residual.keras',
+    'Vanilla CNN':        'models/emotion_detection/vanilla/emotion_cnn_vanilla.keras',
+    'EfficientNet-B0':    'models/emotion_detection_2/efficientnet/emotion_efficientnet.keras',
+    'Hybrid Transformer': 'models/emotion_detection_2/hybrid_transformer/emotion_hybrid_transformer.keras',
 }
 LIP_MODELS = {
     'CNN-LSTM': 'models/checkpoints/LipCNNLSTM_best.h5',
@@ -49,8 +51,10 @@ SPOOF_MODELS = {
 TRAINING_SCRIPTS = {
     'MLP': 'src/training/train_mlp.py',
     'FNN': 'src/training/train_fnn.py',
-    'Residual CNN': 'src/training/train_emotion_cnn_residual.py',
-    'Vanilla CNN': 'src/training/train_emotion_cnn_vanilla.py',
+    'Residual CNN':       'src/training/emotion_detection/train_emotion_cnn_residual.py',
+    'Vanilla CNN':        'src/training/emotion_detection/train_emotion_cnn_vanilla.py',
+    'EfficientNet-B0':    'src/training/emotion_detection_2/train_emotion_efficientnet.py',
+    'Hybrid Transformer': 'src/training/emotion_detection_2/train_emotion_hybrid_transformer.py',
     'CNN-LSTM': 'src/training/train_lip_models.py',
     'CNN-GRU': 'src/training/train_lip_models.py',
     'Conv3D': 'src/training/train_lip_models.py',
@@ -62,25 +66,49 @@ def create_sidebar_frame(title, layout):
     return sg.Frame(title, layout, font='Helvetica 12 bold', title_color=ACCENT_COLOR,
                     background_color=PAPER_COLOR, pad=(10, 10), border_width=0, expand_x=True)
 
+
+def _status_text(key):
+    return sg.Text("", key=key, font='Helvetica 9', background_color=PAPER_COLOR,
+                   text_color="#f44336", pad=(0, 2))
+
+
+def update_status_labels(window, attendance_system):
+    checks = {
+        "-ID_STATUS-":      attendance_system.config["identity_model_path"],
+        "-EMOTION_STATUS-": attendance_system.config["emotion_model_name"],
+        "-SPOOF_STATUS-":   attendance_system.config["glasses_model_path"],
+        "-LIP_STATUS-":     attendance_system.config["lip_model_path"],
+    }
+    for key, path in checks.items():
+        if os.path.isfile(path):
+            window[key].update("Model ready", text_color="#4CAF50")
+        else:
+            window[key].update("Model not found — train first", text_color="#f44336")
+
+
 def build_layout():
     face_rec_layout = [
         [sg.Checkbox("Active", default=True, key="-ID_ACTIVE-", background_color=PAPER_COLOR, text_color=TEXT_COLOR, enable_events=True)],
         [sg.Combo(list(IDENTITY_MODELS.keys()), default_value='MLP', key="-ID_MODEL-", background_color=BG_COLOR, text_color=TEXT_COLOR, size=(30, 1), readonly=True, enable_events=True)],
+        [_status_text("-ID_STATUS-")],
     ]
-    
+
     spoof_layout = [
         [sg.Checkbox("Glasses Active", default=False, key="-SPOOF_ACTIVE-", background_color=PAPER_COLOR, text_color=TEXT_COLOR, enable_events=True)],
-        [sg.Combo(list(SPOOF_MODELS.keys()), default_value='Residual CNN (.keras)', key="-SPOOF_MODEL-", background_color=BG_COLOR, text_color=TEXT_COLOR, size=(30, 1), readonly=True, enable_events=True)]
+        [sg.Combo(list(SPOOF_MODELS.keys()), default_value='Residual CNN (.keras)', key="-SPOOF_MODEL-", background_color=BG_COLOR, text_color=TEXT_COLOR, size=(30, 1), readonly=True, enable_events=True)],
+        [_status_text("-SPOOF_STATUS-")],
     ]
-    
+
     emotion_layout = [
         [sg.Checkbox("Active", default=False, key="-EMOTION_ACTIVE-", background_color=PAPER_COLOR, text_color=TEXT_COLOR, enable_events=True)],
-        [sg.Combo(list(EMOTION_MODELS.keys()), default_value='Residual CNN', key="-EMOTION_MODEL-", background_color=BG_COLOR, text_color=TEXT_COLOR, size=(30, 1), readonly=True, enable_events=True)]
+        [sg.Combo(list(EMOTION_MODELS.keys()), default_value='Residual CNN', key="-EMOTION_MODEL-", background_color=BG_COLOR, text_color=TEXT_COLOR, size=(30, 1), readonly=True, enable_events=True)],
+        [_status_text("-EMOTION_STATUS-")],
     ]
-    
+
     lip_layout = [
         [sg.Checkbox("Active", default=False, key="-LIP_ACTIVE-", background_color=PAPER_COLOR, text_color=TEXT_COLOR, enable_events=True)],
         [sg.Combo(list(LIP_MODELS.keys()), default_value='CNN-LSTM', key="-LIP_MODEL-", background_color=BG_COLOR, text_color=TEXT_COLOR, size=(30, 1), readonly=True, enable_events=True)],
+        [_status_text("-LIP_STATUS-")],
     ]
     
     training_layout = [
@@ -159,8 +187,10 @@ def run_training_script(script_path, env_vars, window):
 def main():
     attendance_system = HybridAttendanceSystem()
     
-    window = sg.Window('Hybrid Attendance System', build_layout(), margins=(0,0), 
+    window = sg.Window('Hybrid Attendance System', build_layout(), margins=(0,0),
                        background_color=BG_COLOR, finalize=True, resizable=True)
+
+    update_status_labels(window, attendance_system)
 
     cap = cv2.VideoCapture(0)
     
@@ -188,9 +218,10 @@ def main():
             attendance_system.config["emotion_model_name"] = EMOTION_MODELS[values["-EMOTION_MODEL-"]]
             attendance_system.config["lip_model_path"] = LIP_MODELS[values["-LIP_MODEL-"]]
             
-            window['-IMAGE-'].update(data=b'') 
+            window['-IMAGE-'].update(data=b'')
             print("Reloading models from dropdown change...")
             attendance_system.reload_models()
+            update_status_labels(window, attendance_system)
             
         if event == '-TRAIN_MODULE-':
             module = values['-TRAIN_MODULE-']
@@ -199,7 +230,8 @@ def main():
             elif module == 'Anti-Spoofing':
                 window['-TRAIN_MODEL-'].update(value='Residual CNN (.keras)', values=list(SPOOF_MODELS.keys()))
             elif module == 'Emotion':
-                window['-TRAIN_MODEL-'].update(value='Residual CNN', values=list(EMOTION_MODELS.keys()))
+                emotion_keys = [k for k in EMOTION_MODELS]
+                window['-TRAIN_MODEL-'].update(value=emotion_keys[0], values=emotion_keys)
             elif module == 'Lip Reading':
                 window['-TRAIN_MODEL-'].update(value='CNN-LSTM', values=list(LIP_MODELS.keys()))
             
@@ -244,17 +276,20 @@ def main():
                 window['-PROGRESS-'].update(current_count=100)
                 window['-TRAIN_STATUS-'].update("Training Completed Successfully!", visible=True, text_color=ACCENT_COLOR)
                 sg.popup("Success", "Training completed successfully. The new weights have been saved.")
-                # Automatically reload models
                 attendance_system.reload_models()
+                update_status_labels(window, attendance_system)
             else:
                 window['-TRAIN_STATUS-'].update("Training Failed.", text_color="#f44336", visible=True)
                 sg.popup_error("Error", "Training failed or was interrupted. Check terminal for details.")
 
         # Always read frame
-        ret, processed_frame = attendance_system.get_processed_frame(cap)
-        if ret:
-            imgbytes = cv2.imencode('.png', processed_frame)[1].tobytes()
-            window['-IMAGE-'].update(data=imgbytes)
+        try:
+            ret, processed_frame = attendance_system.get_processed_frame(cap)
+            if ret and processed_frame is not None:
+                imgbytes = cv2.imencode('.png', processed_frame)[1].tobytes()
+                window['-IMAGE-'].update(data=imgbytes)
+        except Exception as e:
+            print(f"Frame error: {e}")
 
     cap.release()
     window.close()
