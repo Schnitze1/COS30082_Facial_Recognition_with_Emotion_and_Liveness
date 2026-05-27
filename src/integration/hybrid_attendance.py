@@ -52,6 +52,7 @@ class HybridAttendanceSystem:
             "lip_movement_threshold": 8.0,
             "identity_model_path": 'models/checkpoints/mlp_best.h5',
             "lip_model_path": 'models/checkpoints/LipCNNLSTM_best.h5',
+            "smoothing_active": True,
             "emotion_model_name": 'models/emotion_detection/residual/emotion_cnn_residual.keras',
             "glasses_model_path": 'models/glasses_detection/residual/glasses_detector_residual_cnn.keras'
         }
@@ -128,6 +129,8 @@ class HybridAttendanceSystem:
 
         try:
             self.emotion_detector = self._make_emotion_detector(self.config["emotion_model_name"])
+            if self.emotion_detector is not None:
+                self.emotion_detector.smoothing_enabled = self.config["smoothing_active"]
         except Exception as e:
             print(f"Warning: Failed to load Emotion Detector: {e}")
             self.emotion_detector = None

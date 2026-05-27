@@ -98,7 +98,8 @@ def build_layout():
     ]
 
     emotion_layout = [
-        [sg.Checkbox("Active", default=False, key="-EMOTION_ACTIVE-", background_color=PAPER_COLOR, text_color=TEXT_COLOR, enable_events=True)],
+        [sg.Checkbox("Active", default=False, key="-EMOTION_ACTIVE-", background_color=PAPER_COLOR, text_color=TEXT_COLOR, enable_events=True),
+         sg.Checkbox("Temporal Smoothing", default=True, key="-SMOOTHING_ACTIVE-", background_color=PAPER_COLOR, text_color=TEXT_COLOR, enable_events=True)],
         [sg.Combo(list(EMOTION_MODELS.keys()), default_value='Residual CNN', key="-EMOTION_MODEL-", background_color=BG_COLOR, text_color=TEXT_COLOR, size=(30, 1), readonly=True, enable_events=True)],
         [_status_text("-EMOTION_STATUS-")],
     ]
@@ -204,11 +205,14 @@ def main():
         if event == sg.WIN_CLOSED or event == 'Exit':
             break
             
-        if event in ("-ID_ACTIVE-", "-SPOOF_ACTIVE-", "-EMOTION_ACTIVE-", "-LIP_ACTIVE-"):
+        if event in ("-ID_ACTIVE-", "-SPOOF_ACTIVE-", "-EMOTION_ACTIVE-", "-LIP_ACTIVE-", "-SMOOTHING_ACTIVE-"):
             attendance_system.config["identity_active"] = values["-ID_ACTIVE-"]
             attendance_system.config["spoofing_active"] = values["-SPOOF_ACTIVE-"]
             attendance_system.config["emotion_active"] = values["-EMOTION_ACTIVE-"]
             attendance_system.config["lip_active"] = values["-LIP_ACTIVE-"]
+            attendance_system.config["smoothing_active"] = values["-SMOOTHING_ACTIVE-"]
+            if attendance_system.emotion_detector is not None:
+                attendance_system.emotion_detector.smoothing_enabled = values["-SMOOTHING_ACTIVE-"]
             
         if event in ("-ID_MODEL-", "-SPOOF_MODEL-", "-EMOTION_MODEL-", "-LIP_MODEL-"):
             attendance_system.config["identity_model_path"] = IDENTITY_MODELS[values["-ID_MODEL-"]]
