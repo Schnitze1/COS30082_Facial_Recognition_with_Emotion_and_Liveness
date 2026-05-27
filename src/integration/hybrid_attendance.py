@@ -4,10 +4,14 @@ import tensorflow as tf
 import os
 import csv
 import time
+import logging
 from datetime import datetime
 from collections import deque
 from src.integration.emotion_detector import EmotionDetector
 from src.integration.glasses_detector import GlassesDetector
+from src.integration.antispoofing_detector import AntispoofingDetector
+
+logger = logging.getLogger(__name__)
 
 class HybridAttendanceSystem:
     """
@@ -41,6 +45,7 @@ class HybridAttendanceSystem:
             "identity_active": True,
             "similarity_threshold": 0.80,
             "spoofing_active": False,
+            "glasses_active": False,
             "emotion_active": False,
             "lip_active": False,
             "face_min_size": 100,
@@ -48,7 +53,8 @@ class HybridAttendanceSystem:
             "identity_model_path": 'models/checkpoints/mlp_best.h5',
             "lip_model_path": 'models/checkpoints/LipCNNLSTM_best.h5',
             "emotion_model_name": 'models/checkpoints/emotion_cnn_residual.h5',
-            "glasses_model_path": 'models/checkpoints/glasses_detector_residual_cnn.keras'
+            "glasses_model_path": 'models/checkpoints/glasses_detector_residual_cnn.keras',
+            "antispoofing_model_path": 'models/anti_spoofing/antispoofing_model.keras'
         }
 
     def reload_models(self):
@@ -61,7 +67,7 @@ class HybridAttendanceSystem:
                 csv.writer(f).writerow(["name", "event", "spoken_statement", "emotion", "spoof_status", "timestamp"])
 
         if not os.path.exists(self.config["identity_model_path"]):
-            print(f"Error: Identity model not found at {self.config['identity_model_path']}")
+            logger.error(f"Identity model not found at {self.config['identity_model_path']}")
             self.embedding_model = None
         else:
             base_identity_model = tf.keras.models.load_model(self.config["identity_model_path"], compile=False)
@@ -109,20 +115,34 @@ class HybridAttendanceSystem:
             }
             self.lip_model = tf.keras.models.load_model(self.config["lip_model_path"], compile=False, custom_objects=custom_objs)
         else:
-            print(f"Warning: Lip model not found at {self.config['lip_model_path']}. Lip reading disabled.")
+            logger.warning(f"Lip model not found at {self.config['lip_model_path']}. Lip reading disabled.")
             self.lip_model = None
 
         try:
-            self.emotion_detector = EmotionDetector(model_path=self.config["emotion_model_name"])
+            model_path = self.config["emotion_model_name"]
+            if model_path and "efficientnet" in model_path.lower():
+                from src.integration.emotion_detector_efficientnet import EmotionDetectorEfficientNet
+                self.emotion_detector = EmotionDetectorEfficientNet(model_path=model_path)
+            elif model_path and "transformer" in model_path.lower():
+                from src.integration.emotion_detector_transformer import EmotionDetectorTransformer
+                self.emotion_detector = EmotionDetectorTransformer(model_path=model_path)
+            else:
+                self.emotion_detector = EmotionDetector(model_path=model_path)
         except Exception as e:
-            print(f"Warning: Failed to load Emotion Detector: {e}")
+            logger.error(f"Failed to load Emotion Detector: {e}")
             self.emotion_detector = None
 
         try:
             self.glasses_detector = GlassesDetector(model_path=self.config["glasses_model_path"])
         except Exception as e:
-            print(f"Warning: Failed to load Glasses Detector: {e}")
+            logger.error(f"Failed to load Glasses Detector: {e}")
             self.glasses_detector = None
+
+        try:
+            self.antispoofing_detector = AntispoofingDetector(model_path=self.config["antispoofing_model_path"])
+        except Exception as e:
+            logger.error(f"Failed to load Anti-Spoofing Detector: {e}")
+            self.antispoofing_detector = None
 
         self._update_db_cache()
         self.is_initialized = True
@@ -247,7 +267,8 @@ class HybridAttendanceSystem:
                     "spoken": "",
                     "emotion_label": "",
                     "emotion_emoji": "",
-                    "spoof_status": ""
+                    "spoof_status": "",
+                    "glasses_status": ""
                 }
             
             current_matched_ids.add(best_id)
@@ -256,20 +277,71 @@ class HybridAttendanceSystem:
             info["bbox"] = (x, y, w, h)
             info["missing_since"] = None
             
-            # Anti-spoofing (glasses) pathway
-            if self.config["spoofing_active"] and self.glasses_detector is not None:
-                face_crop_bgr = frame[y:y+h, x:x+w]
-                if face_crop_bgr.size > 0:
+            # Anti-spoofing pathway
+            if self.config["spoofing_active"] and self.antispoofing_detector is not None:
+                margin = 0.25
+                side = int(max(w, h) * (1.0 + 2.0 * margin))
+                center_x = x + w // 2
+                center_y = y + h // 2
+                
+                x1 = max(0, center_x - side // 2)
+                y1 = max(0, center_y - side // 2)
+                x2 = min(frame.shape[1], x1 + side)
+                y2 = min(frame.shape[0], y1 + side)
+                
+                x1 = max(0, x2 - side)
+                y1 = max(0, y2 - side)
+                
+                face_crop_bgr_margin = frame[y1:y2, x1:x2]
+                
+                if face_crop_bgr_margin.size > 0:
                     try:
-                        spoof_res = self.glasses_detector.predict_with_decision(face_crop_bgr)
-                        if spoof_res["decision"] == "block":
-                            info["spoof_status"] = "SPOOF (Sunglasses)"
+                        spoof_res = self.antispoofing_detector.predict(face_crop_bgr_margin)
+                        if not spoof_res["is_real"]:
+                            fake_confidence = (1.0 - spoof_res['score']) * 100
+                            info["spoof_status"] = f"SPOOF (Conf: {fake_confidence:.0f}%)"
+                            if info.get("unknown_since") is not None:
+                                info["unknown_since"] = time.time()
                         else:
                             info["spoof_status"] = "Passed"
                     except Exception as e:
                         pass
             else:
                 info["spoof_status"] = ""
+
+            # Glasses/Sunglasses pathway
+            if self.config.get("glasses_active", False) and self.glasses_detector is not None:
+                margin = 0.25
+                side = int(max(w, h) * (1.0 + 2.0 * margin))
+                center_x = x + w // 2
+                center_y = y + h // 2
+                
+                x1 = max(0, center_x - side // 2)
+                y1 = max(0, center_y - side // 2)
+                x2 = min(frame.shape[1], x1 + side)
+                y2 = min(frame.shape[0], y1 + side)
+                
+                x1 = max(0, x2 - side)
+                y1 = max(0, y2 - side)
+                
+                face_crop_bgr_margin = frame[y1:y2, x1:x2]
+                
+                if face_crop_bgr_margin.size > 0:
+                    try:
+                        glasses_res = self.glasses_detector.predict(face_crop_bgr_margin)
+                        cls = glasses_res.get("class", "no_glasses")
+                        if cls == "sunglasses":
+                            info["glasses_status"] = "SPOOF (Sunglasses)"
+                            if info.get("unknown_since") is not None:
+                                info["unknown_since"] = time.time()
+                        elif cls == "glasses":
+                            info["glasses_status"] = "Glasses"
+                        else:
+                            info["glasses_status"] = "No Glasses"
+                    except Exception as e:
+                        pass
+            else:
+                info["glasses_status"] = ""
 
             # Emotion pathway
             if self.config["emotion_active"] and self.emotion_detector is not None:
@@ -355,14 +427,23 @@ class HybridAttendanceSystem:
             
             # Annotation
             color = (0, 255, 0) if info["name"] != "Unknown" else (0, 0, 255)
-            if info["spoof_status"] and "SPOOF" in info["spoof_status"]:
+            is_spoofed = (info["spoof_status"] and "SPOOF" in info["spoof_status"]) or \
+                         (info.get("glasses_status") and "SPOOF" in info["glasses_status"])
+            if is_spoofed:
                 color = (0, 0, 255) # Red for spoof
 
             cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
             cv2.putText(frame, info["name"], (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
             
+            status_y = y - 30
             if info["spoof_status"]:
-                cv2.putText(frame, info["spoof_status"], (x, y-30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+                cv2.putText(frame, info["spoof_status"], (x, status_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+                status_y -= 20
+            if info.get("glasses_status"):
+                g_color = (0, 0, 255) if "SPOOF" in info["glasses_status"] else (0, 255, 0)
+                cv2.putText(frame, f"Glasses: {info['glasses_status']}", (x, status_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, g_color, 2)
+                status_y -= 20
+                
             if info["emotion_label"]:
                 cv2.putText(frame, info["emotion_label"], (x + w + 10, y + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 100, 100), 2)
             if info["spoken"]:

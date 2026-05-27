@@ -15,12 +15,15 @@ Usage:
 
 import math
 import os
+import logging
 from collections import deque
 
 import cv2
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import layers
+
+logger = logging.getLogger(__name__)
 
 CLASSES = ["anger", "contempt", "disgust", "fear", "happy", "neutral", "sad", "surprise"]
 
@@ -46,11 +49,11 @@ DEFAULT_MODEL_PATHS = [
 # ---------------------------------------------------------------------------
 
 class PatchPositionEmbedding(layers.Layer):
-    def __init__(self, num_patches: int, embedding_dim: int, **kwargs):
+    def __init__(self, num_patches: int, embed_dim: int, **kwargs):
         super().__init__(**kwargs)
         self.num_patches = num_patches
-        self.embedding_dim = embedding_dim
-        self.pos_embed = layers.Embedding(num_patches, embedding_dim)
+        self.embed_dim = embed_dim
+        self.pos_embed = layers.Embedding(num_patches, embed_dim)
 
     def call(self, x):
         positions = tf.range(start=0, limit=tf.shape(x)[1], delta=1)
@@ -58,31 +61,31 @@ class PatchPositionEmbedding(layers.Layer):
 
     def get_config(self):
         cfg = super().get_config()
-        cfg.update({"num_patches": self.num_patches, "embedding_dim": self.embedding_dim})
+        cfg.update({"num_patches": self.num_patches, "embed_dim": self.embed_dim})
         return cfg
 
 
 class TransformerBlock(layers.Layer):
-    def __init__(self, embedding_dim: int, num_heads: int, ff_dim: int, dropout_rate: float = 0.1, **kwargs):
+    def __init__(self, embed_dim: int, num_heads: int, ff_dim: int, dropout: float = 0.1, **kwargs):
         super().__init__(**kwargs)
-        self.embedding_dim = embedding_dim
+        self.embed_dim = embed_dim
         self.num_heads = num_heads
         self.ff_dim = ff_dim
-        self.dropout_rate = dropout_rate
+        self.dropout = dropout
 
         self.attention = layers.MultiHeadAttention(
             num_heads=num_heads,
-            key_dim=embedding_dim // num_heads,
-            dropout=dropout_rate,
+            key_dim=embed_dim // num_heads,
+            dropout=dropout,
         )
         self.ffn = tf.keras.Sequential([
             layers.Dense(ff_dim, activation="relu"),
-            layers.Dense(embedding_dim),
+            layers.Dense(embed_dim),
         ])
         self.norm1 = layers.LayerNormalization(epsilon=1e-6)
         self.norm2 = layers.LayerNormalization(epsilon=1e-6)
-        self.drop1 = layers.Dropout(dropout_rate)
-        self.drop2 = layers.Dropout(dropout_rate)
+        self.drop1 = layers.Dropout(dropout)
+        self.drop2 = layers.Dropout(dropout)
 
     def call(self, x, training=False):
         normed = self.norm1(x)
@@ -97,10 +100,10 @@ class TransformerBlock(layers.Layer):
     def get_config(self):
         cfg = super().get_config()
         cfg.update({
-            "embedding_dim": self.embedding_dim,
+            "embed_dim": self.embed_dim,
             "num_heads": self.num_heads,
             "ff_dim": self.ff_dim,
-            "dropout_rate": self.dropout_rate,
+            "dropout": self.dropout,
         })
         return cfg
 
@@ -212,17 +215,62 @@ class EmotionDetectorTransformer:
         self.model = self._load_model()
 
     def _load_model(self) -> tf.keras.Model:
-        candidates = [self.model_path] if self.model_path else DEFAULT_MODEL_PATHS
+        candidates = []
+        if self.model_path:
+            candidates.append(self.model_path)
+            if self.model_path.endswith(".keras"):
+                candidates.append(self.model_path.replace(".keras", ".h5"))
+        else:
+            candidates.extend(DEFAULT_MODEL_PATHS)
+
+        last_err = None
         for path in candidates:
             if path and os.path.exists(path):
-                print(f"[EmotionDetectorTransformer] Loading model: {path}")
-                return tf.keras.models.load_model(
-                    path,
-                    custom_objects=CUSTOM_OBJECTS,
-                    compile=False,
-                )
+                logger.info(f"Loading model: {path}")
+                try:
+                    return tf.keras.models.load_model(
+                        path,
+                        custom_objects=CUSTOM_OBJECTS,
+                        compile=False,
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to load model {path} via load_model: {e}. Trying weight-loading fallback...")
+                    last_err = e
+                    try:
+                        from tensorflow.keras import layers, models
+                        
+                        def cnn_block(x, filters, name):
+                            x = layers.Conv2D(filters, 3, padding="same", name=f"{name}_conv", use_bias=False)(x)
+                            x = layers.BatchNormalization(name=f"{name}_bn")(x)
+                            x = layers.ReLU(name=f"{name}_relu")(x)
+                            x = layers.MaxPool2D(2, name=f"{name}_pool")(x)
+                            return x
+                            
+                        inputs = layers.Input(shape=(96, 96, 3))
+                        x = cnn_block(inputs, 32, "cnn1")
+                        x = cnn_block(x, 64, "cnn2")
+                        x = cnn_block(x, 128, "cnn3")
+                        x = layers.Reshape((144, 128))(x)
+                        x = layers.Dense(128)(x)
+                        x = PatchPositionEmbedding(144, 128)(x)
+                        x = layers.Dropout(0.1)(x)
+                        for i in range(2):
+                            x = TransformerBlock(128, 4, 256, 0.1, name=f"transformer_{i}")(x)
+                        x = layers.GlobalAveragePooling1D()(x)
+                        x = layers.LayerNormalization(epsilon=1e-6)(x)
+                        x = layers.Dense(128, activation="relu")(x)
+                        x = layers.Dropout(0.3)(x)
+                        outputs = layers.Dense(8, activation="softmax")(x)
+                        model = models.Model(inputs, outputs, name="emotion_hybrid_transformer")
+                        model.load_weights(path)
+                        logger.info(f"Successfully loaded Hybrid Transformer weights from {path}")
+                        return model
+                    except Exception as e2:
+                        logger.error(f"Failed weight-loading fallback: {e2}")
+                        last_err = e2
         raise FileNotFoundError(
-            f"Hybrid Transformer emotion model not found. Checked: {candidates}\n"
+            f"Hybrid Transformer emotion model not found or failed to load. Checked: {candidates}\n"
+            f"Last error: {last_err}\n"
             "Train first: python src/training/emotion_detection_2/train_emotion_hybrid_transformer.py"
         )
 

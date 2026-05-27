@@ -11,11 +11,14 @@ Usage:
 """
 
 import os
+import logging
 from collections import deque
 
 import cv2
 import numpy as np
 import tensorflow as tf
+
+logger = logging.getLogger(__name__)
 
 CLASSES = ["anger", "contempt", "disgust", "fear", "happy", "neutral", "sad", "surprise"]
 
@@ -109,7 +112,7 @@ class EmotionDetectorEfficientNet:
         min_margin: float = 0.08,
     ):
         self.model_path = model_path
-        self.input_size = (96, 96)
+        self.input_size = (224, 224)
         self.smoother = PredictionSmoother(window_size=smoothing)
         self.tracker = StableEmotionTracker(
             stable_frames=stable_frames,
@@ -119,20 +122,52 @@ class EmotionDetectorEfficientNet:
         self.model = self._load_model()
 
     def _load_model(self) -> tf.keras.Model:
-        candidates = [self.model_path] if self.model_path else DEFAULT_MODEL_PATHS
+        candidates = []
+        if self.model_path:
+            candidates.append(self.model_path)
+            if self.model_path.endswith(".keras"):
+                candidates.append(self.model_path.replace(".keras", ".h5"))
+        else:
+            candidates.extend(DEFAULT_MODEL_PATHS)
+
+        last_err = None
         for path in candidates:
             if path and os.path.exists(path):
-                print(f"[EmotionDetectorEfficientNet] Loading model: {path}")
-                return tf.keras.models.load_model(path, compile=False)
+                logger.info(f"Loading model: {path}")
+                try:
+                    return tf.keras.models.load_model(path, compile=False)
+                except Exception as e:
+                    logger.warning(f"Failed to load model {path} via load_model: {e}. Trying weight-loading fallback...")
+                    last_err = e
+                    try:
+                        from tensorflow.keras.applications import EfficientNetB0
+                        from tensorflow.keras import layers, models
+                        base = EfficientNetB0(weights=None, include_top=False, input_shape=(224, 224, 3))
+                        x = base.output
+                        x = layers.GlobalAveragePooling2D()(x)
+                        x = layers.Dropout(0.3)(x)
+                        x = layers.Dense(256, activation='relu')(x)
+                        x = layers.BatchNormalization()(x)
+                        x = layers.Dropout(0.3)(x)
+                        x = layers.Dense(8)(x)
+                        x = layers.Activation('softmax')(x)
+                        model = models.Model(base.input, x)
+                        model.load_weights(path)
+                        logger.info(f"Successfully loaded EfficientNet weights from {path}")
+                        return model
+                    except Exception as e2:
+                        logger.error(f"Failed weight-loading fallback: {e2}")
+                        last_err = e2
         raise FileNotFoundError(
-            f"EfficientNet emotion model not found. Checked: {candidates}\n"
+            f"EfficientNet emotion model not found or failed to load. Checked: {candidates}\n"
+            f"Last error: {last_err}\n"
             "Train first: python src/training/emotion_detection_2/train_emotion_efficientnet.py"
         )
 
     def _preprocess(self, face_bgr: np.ndarray) -> np.ndarray:
         face_rgb = cv2.cvtColor(face_bgr, cv2.COLOR_BGR2RGB)
         face_resized = cv2.resize(face_rgb, self.input_size, interpolation=cv2.INTER_AREA)
-        face_float = face_resized.astype(np.float32) / 255.0
+        face_float = face_resized.astype(np.float32)
         return np.expand_dims(face_float, axis=0)
 
     def _top_predictions(self, probs: np.ndarray, top_k: int = 3):

@@ -89,10 +89,18 @@ class VerificationEvaluator:
         y_scores = []
         
         with open(self.pairs_file, 'r') as f:
-            lines = f.readlines()
+            content = f.read()
+        
+        # Handle literal '\n' text strings and normal newlines
+        content = content.replace('\\n', '\n').replace('\r', '')
+        lines = content.split('\n')
             
         for line in lines:
-            parts = line.strip().split(',')
+            line_str = line.strip()
+            if ',' in line_str:
+                parts = line_str.split(',')
+            else:
+                parts = line_str.split()
             if len(parts) != 3:
                 continue
                 

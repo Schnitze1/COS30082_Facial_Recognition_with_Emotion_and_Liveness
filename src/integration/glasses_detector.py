@@ -13,12 +13,15 @@ Advisory status:
     sunglasses -> advisory
 """
 
+import logging
 from collections import Counter, deque
 from pathlib import Path
 
 import cv2
 import numpy as np
 import tensorflow as tf
+
+logger = logging.getLogger(__name__)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -65,18 +68,82 @@ class GlassesDetector:
     """
 
     def __init__(self, model_path=None):
-        self.model_path = Path(model_path) if model_path else DEFAULT_MODEL_PATH
-        self.model_path = self.model_path.resolve()
+        base_path = Path(model_path) if model_path else DEFAULT_MODEL_PATH
+        base_path = base_path.resolve()
+        
+        candidates = [base_path]
+        if str(base_path).endswith(".keras"):
+            candidates.append(Path(str(base_path).replace(".keras", ".h5")))
+            
+        last_err = None
+        self.model = None
+        for path in candidates:
+            if path.is_file():
+                logger.info(f"Loading model from: {path}")
+                try:
+                    self.model = tf.keras.models.load_model(str(path), compile=False)
+                    self.model_path = path
+                    break
+                except Exception as e:
+                    logger.warning(f"Failed to load model {path} via load_model: {e}. Trying weight-loading fallback...")
+                    last_err = e
+                    try:
+                        from tensorflow.keras import layers, models
+                        
+                        def conv_block(x, filters, name):
+                            x = layers.Conv2D(filters, 3, padding="same", use_bias=False, name=f"{name}_conv")(x)
+                            x = layers.BatchNormalization(name=f"{name}_bn")(x)
+                            x = layers.Activation("relu", name=f"{name}_relu")(x)
+                            x = layers.MaxPooling2D(pool_size=2, name=f"{name}_pool")(x)
+                            return x
 
-        if not self.model_path.is_file():
-            raise FileNotFoundError(f"Glasses detector model not found: {self.model_path}")
+                        def residual_block(x, filters, name):
+                            shortcut = x
+                            x = layers.Conv2D(filters, 3, padding="same", use_bias=False, name=f"{name}_conv1")(x)
+                            x = layers.BatchNormalization(name=f"{name}_bn1")(x)
+                            x = layers.Activation("relu", name=f"{name}_relu1")(x)
+                            x = layers.Conv2D(filters, 3, padding="same", use_bias=False, name=f"{name}_conv2")(x)
+                            x = layers.BatchNormalization(name=f"{name}_bn2")(x)
+                            if int(shortcut.shape[-1]) != filters:
+                                shortcut = layers.Conv2D(filters, 1, padding="same", use_bias=False, name=f"{name}_shortcut")(shortcut)
+                                shortcut = layers.BatchNormalization(name=f"{name}_shortcut_bn")(shortcut)
+                            x = layers.Add(name=f"{name}_add")([shortcut, x])
+                            x = layers.Activation("relu", name=f"{name}_relu2")(x)
+                            return x
 
-        print(f"Loading glasses detector model: {self.model_path}")
-        self.model = tf.keras.models.load_model(str(self.model_path), compile=False)
+                        inputs = layers.Input(shape=(128, 128, 3), name="face_crop")
+                        x = layers.Rescaling(1.0 / 255.0, name="rescale_0_1")(inputs)
+                        x = layers.Conv2D(32, 3, padding="same", use_bias=False, name="initial_conv32")(x)
+                        x = layers.BatchNormalization(name="initial_bn")(x)
+                        x = layers.Activation("relu", name="initial_relu")(x)
+                        x = layers.MaxPooling2D(pool_size=2, name="initial_pool")(x)
+                        x = conv_block(x, 64, "conv64")
+                        x = residual_block(x, 64, "residual64")
+                        x = conv_block(x, 128, "conv128")
+                        x = residual_block(x, 128, "residual128")
+                        x = conv_block(x, 256, "conv256")
+                        x = layers.GlobalAveragePooling2D(name="global_average_pooling")(x)
+                        x = layers.Dense(256, use_bias=False, name="dense256")(x)
+                        x = layers.BatchNormalization(name="dense256_bn")(x)
+                        x = layers.Activation("relu", name="dense256_relu")(x)
+                        x = layers.Dropout(0.4, name="dropout_0_4")(x)
+                        outputs = layers.Dense(3, activation="softmax", name="class_output")(x)
+                        model = models.Model(inputs=inputs, outputs=outputs, name="GlassesResidualCNN")
+                        model.load_weights(str(path), by_name=True)
+                        self.model = model
+                        self.model_path = path
+                        logger.info(f"Successfully loaded glasses detector weights from {path}")
+                        break
+                    except Exception as e2:
+                        logger.error(f"Failed weight-loading fallback: {e2}")
+                        last_err = e2
+                        
+        if self.model is None:
+            raise FileNotFoundError(f"Glasses detector model not found or failed to load. Checked: {candidates}. Last error: {last_err}")
         # The input size is read from the saved model so callers do not need to
         # know the training image size when integrating the detector.
         self.img_size = self._get_model_input_size()
-        print(f"Model input size: {self.img_size[0]}x{self.img_size[1]}")
+        logger.info(f"Model input size: {self.img_size[0]}x{self.img_size[1]}")
         self.face_detector = self.build_face_detector()
         self.last_face_crop = None
         self.glasses_history = deque(maxlen=GLASSES_STABILITY_WINDOW)

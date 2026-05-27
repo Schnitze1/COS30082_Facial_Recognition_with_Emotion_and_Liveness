@@ -34,16 +34,21 @@ IDENTITY_MODELS = {
 }
 EMOTION_MODELS = {
     'Residual CNN': 'models/checkpoints/emotion_cnn_residual.h5',
-    'Vanilla CNN': 'models/checkpoints/emotion_cnn_vanilla.h5'
+    'Vanilla CNN': 'models/checkpoints/emotion_cnn_vanilla.h5',
+    'EfficientNet': 'models/emotion_detection_2/efficientnet/emotion_efficientnet.keras',
+    'Hybrid Transformer': 'models/emotion_detection_2/hybrid_transformer/emotion_hybrid_transformer.keras'
 }
 LIP_MODELS = {
     'CNN-LSTM': 'models/checkpoints/LipCNNLSTM_best.h5',
     'CNN-GRU': 'models/checkpoints/LipCNNGRU_best.h5',
     'Conv3D': 'models/checkpoints/LipConv3D_best.h5'
 }
-SPOOF_MODELS = {
+GLASSES_MODELS = {
     'Residual CNN (.keras)': 'models/checkpoints/glasses_detector_residual_cnn.keras',
     'Residual CNN (.h5)': 'models/checkpoints/glasses_detector_residual_cnn.h5'
+}
+SPOOF_MODELS = {
+    'MobileNetV2': 'models/anti_spoofing/antispoofing_model.keras'
 }
 
 TRAINING_SCRIPTS = {
@@ -51,9 +56,12 @@ TRAINING_SCRIPTS = {
     'FNN': 'src/training/train_fnn.py',
     'Residual CNN': 'src/training/train_emotion_cnn_residual.py',
     'Vanilla CNN': 'src/training/train_emotion_cnn_vanilla.py',
+    'EfficientNet': 'src/training/train_emotion_efficientnet.py',
+    'Hybrid Transformer': 'src/training/train_emotion_hybrid_transformer.py',
     'CNN-LSTM': 'src/training/train_lip_models.py',
     'CNN-GRU': 'src/training/train_lip_models.py',
     'Conv3D': 'src/training/train_lip_models.py',
+    'MobileNetV2': 'src/training/anti_spoofing/train_antispoofing.py',
     'Residual CNN (.keras)': 'src/training/train_glasses_detector.py',
     'Residual CNN (.h5)': 'src/training/train_glasses_detector.py'
 }
@@ -69,8 +77,13 @@ def build_layout():
     ]
     
     spoof_layout = [
-        [sg.Checkbox("Glasses Active", default=False, key="-SPOOF_ACTIVE-", background_color=PAPER_COLOR, text_color=TEXT_COLOR, enable_events=True)],
-        [sg.Combo(list(SPOOF_MODELS.keys()), default_value='Residual CNN (.keras)', key="-SPOOF_MODEL-", background_color=BG_COLOR, text_color=TEXT_COLOR, size=(30, 1), readonly=True, enable_events=True)]
+        [sg.Checkbox("Active", default=False, key="-SPOOF_ACTIVE-", background_color=PAPER_COLOR, text_color=TEXT_COLOR, enable_events=True)],
+        [sg.Combo(list(SPOOF_MODELS.keys()), default_value='MobileNetV2', key="-SPOOF_MODEL-", background_color=BG_COLOR, text_color=TEXT_COLOR, size=(30, 1), readonly=True, enable_events=True)]
+    ]
+    
+    glasses_layout = [
+        [sg.Checkbox("Active", default=False, key="-GLASSES_ACTIVE-", background_color=PAPER_COLOR, text_color=TEXT_COLOR, enable_events=True)],
+        [sg.Combo(list(GLASSES_MODELS.keys()), default_value='Residual CNN (.keras)', key="-GLASSES_MODEL-", background_color=BG_COLOR, text_color=TEXT_COLOR, size=(30, 1), readonly=True, enable_events=True)]
     ]
     
     emotion_layout = [
@@ -85,9 +98,9 @@ def build_layout():
     
     training_layout = [
         [sg.Text("Module to Train:", background_color=PAPER_COLOR, text_color=TEXT_SEC_COLOR, font='Helvetica 10')],
-        [sg.Combo(['Identity', 'Anti-Spoofing', 'Emotion', 'Lip Reading'], default_value='Emotion', key='-TRAIN_MODULE-', background_color=BG_COLOR, text_color=TEXT_COLOR, size=(28, 1), readonly=True, enable_events=True)],
+        [sg.Combo(['Identity', 'Anti-Spoofing', 'Glasses/Sunglasses', 'Emotion', 'Lip Reading'], default_value='Emotion', key='-TRAIN_MODULE-', background_color=BG_COLOR, text_color=TEXT_COLOR, size=(28, 1), readonly=True, enable_events=True)],
         [sg.Text("Model to Train:", background_color=PAPER_COLOR, text_color=TEXT_SEC_COLOR, font='Helvetica 10')],
-        [sg.Combo(['Residual CNN', 'Vanilla CNN'], default_value='Residual CNN', key='-TRAIN_MODEL-', background_color=BG_COLOR, text_color=TEXT_COLOR, size=(28, 1), readonly=True)],
+        [sg.Combo(list(EMOTION_MODELS.keys()), default_value='Residual CNN', key='-TRAIN_MODEL-', background_color=BG_COLOR, text_color=TEXT_COLOR, size=(28, 1), readonly=True)],
         [sg.Text("Epochs:", background_color=PAPER_COLOR, text_color=TEXT_SEC_COLOR, font='Helvetica 10'), 
          sg.InputText('120', key='-EPOCHS-', size=(10, 1), background_color=BG_COLOR, text_color=TEXT_COLOR)],
         [sg.Text("Learning Rate:", background_color=PAPER_COLOR, text_color=TEXT_SEC_COLOR, font='Helvetica 10'),
@@ -101,6 +114,7 @@ def build_layout():
         [sg.Text("Project Dashboard", font='Helvetica 16 bold', background_color=PAPER_COLOR, text_color=TEXT_COLOR, pad=(10, 20))],
         [create_sidebar_frame("Face Recognition", face_rec_layout)],
         [create_sidebar_frame("Anti-Spoofing", spoof_layout)],
+        [create_sidebar_frame("Glasses/Sunglasses Detection", glasses_layout)],
         [create_sidebar_frame("Emotion Detection", emotion_layout)],
         [create_sidebar_frame("Lip Reading", lip_layout)],
         [create_sidebar_frame("Hyperparameter Tuning", training_layout)],
@@ -162,6 +176,21 @@ def main():
     window = sg.Window('Hybrid Attendance System', build_layout(), margins=(0,0), 
                        background_color=BG_COLOR, finalize=True, resizable=True)
 
+    # Synchronize initial GUI state to attendance system config
+    attendance_system.config["identity_active"] = window["-ID_ACTIVE-"].get()
+    attendance_system.config["spoofing_active"] = window["-SPOOF_ACTIVE-"].get()
+    attendance_system.config["glasses_active"] = window["-GLASSES_ACTIVE-"].get()
+    attendance_system.config["emotion_active"] = window["-EMOTION_ACTIVE-"].get()
+    attendance_system.config["lip_active"] = window["-LIP_ACTIVE-"].get()
+    
+    attendance_system.config["identity_model_path"] = IDENTITY_MODELS[window["-ID_MODEL-"].get()]
+    attendance_system.config["antispoofing_model_path"] = SPOOF_MODELS[window["-SPOOF_MODEL-"].get()]
+    attendance_system.config["glasses_model_path"] = GLASSES_MODELS[window["-GLASSES_MODEL-"].get()]
+    attendance_system.config["emotion_model_name"] = EMOTION_MODELS[window["-EMOTION_MODEL-"].get()]
+    attendance_system.config["lip_model_path"] = LIP_MODELS[window["-LIP_MODEL-"].get()]
+    
+    attendance_system.reload_models()
+
     cap = cv2.VideoCapture(0)
     
     if not cap.isOpened():
@@ -176,15 +205,17 @@ def main():
         if event == sg.WIN_CLOSED or event == 'Exit':
             break
             
-        if event in ("-ID_ACTIVE-", "-SPOOF_ACTIVE-", "-EMOTION_ACTIVE-", "-LIP_ACTIVE-"):
+        if event in ("-ID_ACTIVE-", "-SPOOF_ACTIVE-", "-GLASSES_ACTIVE-", "-EMOTION_ACTIVE-", "-LIP_ACTIVE-"):
             attendance_system.config["identity_active"] = values["-ID_ACTIVE-"]
             attendance_system.config["spoofing_active"] = values["-SPOOF_ACTIVE-"]
+            attendance_system.config["glasses_active"] = values["-GLASSES_ACTIVE-"]
             attendance_system.config["emotion_active"] = values["-EMOTION_ACTIVE-"]
             attendance_system.config["lip_active"] = values["-LIP_ACTIVE-"]
             
-        if event in ("-ID_MODEL-", "-SPOOF_MODEL-", "-EMOTION_MODEL-", "-LIP_MODEL-"):
+        if event in ("-ID_MODEL-", "-SPOOF_MODEL-", "-GLASSES_MODEL-", "-EMOTION_MODEL-", "-LIP_MODEL-"):
             attendance_system.config["identity_model_path"] = IDENTITY_MODELS[values["-ID_MODEL-"]]
-            attendance_system.config["glasses_model_path"] = SPOOF_MODELS[values["-SPOOF_MODEL-"]]
+            attendance_system.config["antispoofing_model_path"] = SPOOF_MODELS[values["-SPOOF_MODEL-"]]
+            attendance_system.config["glasses_model_path"] = GLASSES_MODELS[values["-GLASSES_MODEL-"]]
             attendance_system.config["emotion_model_name"] = EMOTION_MODELS[values["-EMOTION_MODEL-"]]
             attendance_system.config["lip_model_path"] = LIP_MODELS[values["-LIP_MODEL-"]]
             
@@ -197,7 +228,9 @@ def main():
             if module == 'Identity':
                 window['-TRAIN_MODEL-'].update(value='MLP', values=list(IDENTITY_MODELS.keys()))
             elif module == 'Anti-Spoofing':
-                window['-TRAIN_MODEL-'].update(value='Residual CNN (.keras)', values=list(SPOOF_MODELS.keys()))
+                window['-TRAIN_MODEL-'].update(value='MobileNetV2', values=list(SPOOF_MODELS.keys()))
+            elif module == 'Glasses/Sunglasses':
+                window['-TRAIN_MODEL-'].update(value='Residual CNN (.keras)', values=list(GLASSES_MODELS.keys()))
             elif module == 'Emotion':
                 window['-TRAIN_MODEL-'].update(value='Residual CNN', values=list(EMOTION_MODELS.keys()))
             elif module == 'Lip Reading':

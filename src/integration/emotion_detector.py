@@ -16,7 +16,10 @@ import json
 import os
 import shutil
 import tempfile
+import logging
 from collections import deque
+
+logger = logging.getLogger(__name__)
 
 os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
 os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
@@ -507,8 +510,8 @@ class EmotionDetector:
                     "Try using a compatible .h5 model export."
                 ) from exc
 
-            print("Direct H5 load failed. Trying sanitized H5 compatibility copy.")
-            print("Original load error:", exc)
+            logger.warning("Direct H5 load failed. Trying sanitized H5 compatibility copy.")
+            logger.warning(f"Original load error: {exc}")
 
             sanitized_path = self._create_sanitized_h5_copy(model_path)
 

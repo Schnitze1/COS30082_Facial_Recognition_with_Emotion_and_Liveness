@@ -13,8 +13,12 @@ __pycache__/
 # Datasets
 data/
 
-# Ignore only archived/temporary model files
-models/ignore/
+# Ignore all model weights and checkpoints
+models/
+
+# Ignore all generated reports and evaluation plots
+reports/
+src/evaluation/*.png
 
 # Logs/debug outputs
 logs/
@@ -38,3 +42,9 @@ src/integration/test_glasses_webcam.py
 # Documents and Texts
 *.pdf
 *.txt
+*report.md
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
