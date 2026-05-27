@@ -109,7 +109,6 @@ class EmotionDetectorEfficientNet:
         min_margin: float = 0.08,
     ):
         self.model_path = model_path
-        self.input_size = (96, 96)
         self.smoother = PredictionSmoother(window_size=smoothing)
         self.tracker = StableEmotionTracker(
             stable_frames=stable_frames,
@@ -117,6 +116,7 @@ class EmotionDetectorEfficientNet:
             min_margin=min_margin,
         )
         self.model = self._load_model()
+        self.input_size = self._get_input_size()
 
     def _load_model(self) -> tf.keras.Model:
         candidates = [self.model_path] if self.model_path else DEFAULT_MODEL_PATHS
@@ -128,6 +128,13 @@ class EmotionDetectorEfficientNet:
             f"EfficientNet emotion model not found. Checked: {candidates}\n"
             "Train first: python src/training/emotion_detection_2/train_emotion_efficientnet.py"
         )
+
+    def _get_input_size(self) -> tuple[int, int]:
+        shape = self.model.input_shape
+        if isinstance(shape, list):
+            shape = shape[0]
+        _, h, w, _ = shape
+        return int(w), int(h)
 
     def _preprocess(self, face_bgr: np.ndarray) -> np.ndarray:
         face_rgb = cv2.cvtColor(face_bgr, cv2.COLOR_BGR2RGB)
