@@ -52,8 +52,8 @@ class HybridAttendanceSystem:
             "lip_movement_threshold": 8.0,
             "identity_model_path": 'models/checkpoints/mlp_best.h5',
             "lip_model_path": 'models/checkpoints/LipCNNLSTM_best.h5',
-            "emotion_model_name": 'models/emotion_detection/residual/emotion_cnn_residual.h5',
-            "glasses_model_path": 'models/glasses_detection/residual/glasses_detector_residual_cnn.h5'
+            "emotion_model_name": 'models/emotion_detection/residual/emotion_cnn_residual.keras',
+            "glasses_model_path": 'models/glasses_detection/residual/glasses_detector_residual_cnn.keras'
         }
 
     def _make_emotion_detector(self, model_path):
@@ -169,6 +169,20 @@ class HybridAttendanceSystem:
                         embs.append(emb)
                 if embs:
                     self.db_embeddings[person_dir] = embs
+
+    @staticmethod
+    def _square_crop_with_margin(frame, x, y, w, h, margin=0.20):
+        """Return a square face crop expanded by margin on each side, clamped to frame."""
+        fh, fw = frame.shape[:2]
+        side = int(max(w, h) * (1.0 + 2.0 * margin))
+        cx, cy = x + w // 2, y + h // 2
+        x1 = max(cx - side // 2, 0)
+        y1 = max(cy - side // 2, 0)
+        x2 = min(x1 + side, fw)
+        y2 = min(y1 + side, fh)
+        x1 = max(x2 - side, 0)
+        y1 = max(y2 - side, 0)
+        return frame[y1:y2, x1:x2]
 
     def _cosine_similarity(self, emb1, emb2):
         """
@@ -287,7 +301,7 @@ class HybridAttendanceSystem:
 
             # Emotion pathway
             if self.config["emotion_active"] and self.emotion_detector is not None:
-                face_crop_bgr = frame[y:y+h, x:x+w]
+                face_crop_bgr = self._square_crop_with_margin(frame, x, y, w, h)
                 if face_crop_bgr.size > 0:
                     emotion_result = self.emotion_detector.predict_from_face(face_crop_bgr)
                     if emotion_result.get("face_detected"):
