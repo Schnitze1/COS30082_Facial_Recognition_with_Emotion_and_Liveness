@@ -1,10 +1,23 @@
-tensorflow==2.10.0
-numpy<2
-opencv-python
-scikit-learn
-matplotlib
-jupyter
-pandas
-seaborn
-tqdm
-pyyaml
+# for python 3.10
+tensorflow==2.21.0
+keras==3.12.2
+numpy==2.2.6
+opencv-python==4.13.0.92
+h5py==3.14.0
+scikit-learn==1.7.2
+scipy==1.15.3
+matplotlib==3.10.9
+pandas==2.3.3
+seaborn==0.13.2
+tqdm==4.67.3
+pyyaml==6.0.3
+pillow==12.2.0
+jupyter==1.1.1
+FreeSimpleGUI==5.2.0.post1
+# TensorBoard and TensorFlow ecosystem
+tensorboard==2.16.2
+tensorboard-data-server==0.7.2
+tensorboard-plugin-wit==1.8.1
+tensorflow-estimator==2.10.0
+tensorflow-io-gcs-filesystem==0.37.1
+#tensorflow-directml-plugin==0.4.0.dev230202
