@@ -36,8 +36,8 @@ EMOTION_FEEDBACK = {
 }
 
 DEFAULT_MODEL_PATHS = [
-    "models/emotion_detection_2/hybrid_transformer/emotion_hybrid_transformer.keras",
     "models/emotion_detection_2/hybrid_transformer/emotion_hybrid_transformer.h5",
+    "models/emotion_detection_2/hybrid_transformer/emotion_hybrid_transformer.keras",
 ]
 
 
@@ -46,11 +46,15 @@ DEFAULT_MODEL_PATHS = [
 # ---------------------------------------------------------------------------
 
 class PatchPositionEmbedding(layers.Layer):
-    def __init__(self, num_patches: int, embedding_dim: int, **kwargs):
+    def __init__(self, num_patches: int, embed_dim: int, **kwargs):
         super().__init__(**kwargs)
         self.num_patches = num_patches
-        self.embedding_dim = embedding_dim
-        self.pos_embed = layers.Embedding(num_patches, embedding_dim)
+        self.embed_dim = embed_dim
+        self.pos_embed = layers.Embedding(num_patches, embed_dim)
+
+    def build(self, input_shape):
+        self.pos_embed.build((None,))
+        super().build(input_shape)
 
     def call(self, x):
         positions = tf.range(start=0, limit=tf.shape(x)[1], delta=1)
@@ -58,31 +62,41 @@ class PatchPositionEmbedding(layers.Layer):
 
     def get_config(self):
         cfg = super().get_config()
-        cfg.update({"num_patches": self.num_patches, "embedding_dim": self.embedding_dim})
+        cfg.update({"num_patches": self.num_patches, "embed_dim": self.embed_dim})
         return cfg
 
 
 class TransformerBlock(layers.Layer):
-    def __init__(self, embedding_dim: int, num_heads: int, ff_dim: int, dropout_rate: float = 0.1, **kwargs):
+    def __init__(self, embed_dim: int, num_heads: int, ff_dim: int, dropout: float = 0.1, **kwargs):
         super().__init__(**kwargs)
-        self.embedding_dim = embedding_dim
+        self.embed_dim = embed_dim
         self.num_heads = num_heads
         self.ff_dim = ff_dim
-        self.dropout_rate = dropout_rate
+        self.dropout = dropout
 
         self.attention = layers.MultiHeadAttention(
             num_heads=num_heads,
-            key_dim=embedding_dim // num_heads,
-            dropout=dropout_rate,
+            key_dim=embed_dim // num_heads,
+            dropout=dropout,
         )
         self.ffn = tf.keras.Sequential([
             layers.Dense(ff_dim, activation="relu"),
-            layers.Dense(embedding_dim),
+            layers.Dense(embed_dim),
         ])
         self.norm1 = layers.LayerNormalization(epsilon=1e-6)
         self.norm2 = layers.LayerNormalization(epsilon=1e-6)
-        self.drop1 = layers.Dropout(dropout_rate)
-        self.drop2 = layers.Dropout(dropout_rate)
+        self.drop1 = layers.Dropout(dropout)
+        self.drop2 = layers.Dropout(dropout)
+
+    def build(self, input_shape):
+        self.norm1.build(input_shape)
+        self.norm2.build(input_shape)
+        self.drop1.build(input_shape)
+        self.drop2.build(input_shape)
+        # Keras 3: MultiHeadAttention.build takes (query_shape, value_shape) separately
+        self.attention.build(input_shape, input_shape)
+        self.ffn.build(input_shape)
+        super().build(input_shape)
 
     def call(self, x, training=False):
         normed = self.norm1(x)
@@ -97,10 +111,10 @@ class TransformerBlock(layers.Layer):
     def get_config(self):
         cfg = super().get_config()
         cfg.update({
-            "embedding_dim": self.embedding_dim,
+            "embed_dim": self.embed_dim,
             "num_heads": self.num_heads,
             "ff_dim": self.ff_dim,
-            "dropout_rate": self.dropout_rate,
+            "dropout": self.dropout,
         })
         return cfg
 
@@ -154,7 +168,7 @@ class PredictionSmoother:
 
 
 class StableEmotionTracker:
-    def __init__(self, stable_frames: int = 5, min_confidence: float = 0.40, min_margin: float = 0.08):
+    def __init__(self, stable_frames: int = 3, min_confidence: float = 0.20, min_margin: float = 0.05):
         self.stable_frames = stable_frames
         self.min_confidence = min_confidence
         self.min_margin = min_margin
@@ -197,12 +211,11 @@ class EmotionDetectorTransformer:
         self,
         model_path: str | None = None,
         smoothing: int = 3,
-        stable_frames: int = 5,
-        min_confidence: float = 0.40,
-        min_margin: float = 0.08,
+        stable_frames: int = 3,
+        min_confidence: float = 0.20,
+        min_margin: float = 0.05,
     ):
         self.model_path = model_path
-        self.input_size = (96, 96)
         self.smoother = PredictionSmoother(window_size=smoothing)
         self.tracker = StableEmotionTracker(
             stable_frames=stable_frames,
@@ -210,9 +223,15 @@ class EmotionDetectorTransformer:
             min_margin=min_margin,
         )
         self.model = self._load_model()
+        self.input_size = self._get_input_size()
+        self.smoothing_enabled = True
 
     def _load_model(self) -> tf.keras.Model:
-        candidates = [self.model_path] if self.model_path else DEFAULT_MODEL_PATHS
+        if self.model_path:
+            base = self.model_path.rsplit(".", 1)[0]
+            candidates = [base + ".h5", base + ".keras"]
+        else:
+            candidates = DEFAULT_MODEL_PATHS
         for path in candidates:
             if path and os.path.exists(path):
                 print(f"[EmotionDetectorTransformer] Loading model: {path}")
@@ -225,6 +244,13 @@ class EmotionDetectorTransformer:
             f"Hybrid Transformer emotion model not found. Checked: {candidates}\n"
             "Train first: python src/training/emotion_detection_2/train_emotion_hybrid_transformer.py"
         )
+
+    def _get_input_size(self) -> tuple[int, int]:
+        shape = self.model.input_shape
+        if isinstance(shape, list):
+            shape = shape[0]
+        _, h, w, _ = shape
+        return int(w), int(h)
 
     def _preprocess(self, face_bgr: np.ndarray) -> np.ndarray:
         face_rgb = cv2.cvtColor(face_bgr, cv2.COLOR_BGR2RGB)
@@ -255,20 +281,30 @@ class EmotionDetectorTransformer:
 
         batch = self._preprocess(face_bgr)
         raw_probs = self.model.predict(batch, verbose=0)[0]
-        smooth_probs = self.smoother.update(raw_probs)
 
-        top = self._top_predictions(smooth_probs)
-        top_emotion, top_conf = top[0]
-        margin = top_conf - top[1][1] if len(top) > 1 else 1.0
+        # Guard against NaN/Inf from corrupted model weights
+        if not np.all(np.isfinite(raw_probs)):
+            raw_probs = np.ones(len(CLASSES), dtype=np.float32) / len(CLASSES)
 
-        stable = self.tracker.update(top_emotion, top_conf, margin)
-        display_emotion = stable or top_emotion
+        if self.smoothing_enabled:
+            probs = self.smoother.update(raw_probs)
+            top = self._top_predictions(probs)
+            top_emotion, top_conf = top[0]
+            margin = top_conf - top[1][1] if len(top) > 1 else 1.0
+            stable = self.tracker.update(top_emotion, top_conf, margin)
+            display_emotion = stable or top_emotion
+        else:
+            probs = raw_probs
+            top = self._top_predictions(probs)
+            top_emotion, top_conf = top[0]
+            display_emotion = top_emotion
+
         feedback = EMOTION_FEEDBACK.get(display_emotion, {"emoji": "", "message": ""})
 
         return {
             "face_detected": True,
             "emotion": display_emotion,
-            "confidence": float(smooth_probs[CLASSES.index(display_emotion)]),
+            "confidence": float(probs[CLASSES.index(display_emotion)]),
             "emoji": feedback["emoji"],
             "message": feedback["message"],
             "face_box": None,

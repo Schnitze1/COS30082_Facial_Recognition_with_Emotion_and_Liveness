@@ -260,6 +260,7 @@ class EmotionDetector:
             min_confidence=min_confidence,
             min_margin=min_margin,
         )
+        self.smoothing_enabled = True
 
         self.face_detector = self._build_face_detector()
 
@@ -292,10 +293,14 @@ class EmotionDetector:
         batch = self._preprocess_face(face_bgr)
 
         probabilities = self.model.predict(batch, verbose=0)[0]
-        probabilities = self.smoother.update(probabilities)
 
-        top_predictions = self._get_top_predictions(probabilities)
-        stable_emotion, stable_confidence = self.tracker.update(top_predictions)
+        if self.smoothing_enabled:
+            probabilities = self.smoother.update(probabilities)
+            top_predictions = self._get_top_predictions(probabilities)
+            stable_emotion, stable_confidence = self.tracker.update(top_predictions)
+        else:
+            top_predictions = self._get_top_predictions(probabilities)
+            stable_emotion, stable_confidence = top_predictions[0] if top_predictions else (None, 0.0)
 
         return self._format_result(
             emotion=stable_emotion,

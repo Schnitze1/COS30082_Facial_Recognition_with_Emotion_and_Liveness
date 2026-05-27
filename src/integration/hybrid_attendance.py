@@ -1,13 +1,19 @@
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+
 import cv2
 import numpy as np
 import tensorflow as tf
-import os
 import csv
 import time
 from datetime import datetime
 from collections import deque
 from src.integration.emotion_detector import EmotionDetector
+from src.integration.emotion_detector_efficientnet import EmotionDetectorEfficientNet
+from src.integration.emotion_detector_transformer import EmotionDetectorTransformer
 from src.integration.glasses_detector import GlassesDetector
+from src.integration.antispoofing_detector import AntispoofingDetector
 
 class HybridAttendanceSystem:
     """
@@ -34,22 +40,38 @@ class HybridAttendanceSystem:
         self.lip_model = None
         self.emotion_detector = None
         self.glasses_detector = None
+        self.spoof_detector = None
         self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
         self.is_initialized = False
 
         self.config = {
             "identity_active": True,
             "similarity_threshold": 0.80,
+            "glasses_active": False,
             "spoofing_active": False,
             "emotion_active": False,
             "lip_active": False,
             "face_min_size": 100,
             "lip_movement_threshold": 8.0,
-            "identity_model_path": 'models/checkpoints/mlp_best.h5',
-            "lip_model_path": 'models/checkpoints/LipCNNLSTM_best.h5',
-            "emotion_model_name": 'models/checkpoints/emotion_cnn_residual.h5',
-            "glasses_model_path": 'models/checkpoints/glasses_detector_residual_cnn.keras'
+            "identity_model_path": 'models/face_recognition/FNN.h5',
+            "lip_model_path": 'models/lip_reading/CNN LSTM.h5',
+            "smoothing_active": True,
+            "emotion_model_name": 'models/emotion_detection/residual/emotion_cnn_residual.keras',
+            "glasses_model_path": 'models/glasses_detection/residual/glasses_detector_residual_cnn.keras',
+            "spoof_model_path": 'models/anti-spoofing/antispoofing_model.h5'
         }
+
+    def _make_spoof_detector(self, model_path):
+        return AntispoofingDetector(model_path=model_path)
+
+    def _make_emotion_detector(self, model_path):
+        """Instantiate the correct detector class based on the model filename."""
+        name = os.path.basename(model_path).lower()
+        if "efficientnet" in name:
+            return EmotionDetectorEfficientNet(model_path=model_path)
+        if "transformer" in name:
+            return EmotionDetectorTransformer(model_path=model_path)
+        return EmotionDetector(model_path=model_path)
 
     def reload_models(self):
         """
@@ -113,7 +135,9 @@ class HybridAttendanceSystem:
             self.lip_model = None
 
         try:
-            self.emotion_detector = EmotionDetector(model_path=self.config["emotion_model_name"])
+            self.emotion_detector = self._make_emotion_detector(self.config["emotion_model_name"])
+            if self.emotion_detector is not None:
+                self.emotion_detector.smoothing_enabled = self.config["smoothing_active"]
         except Exception as e:
             print(f"Warning: Failed to load Emotion Detector: {e}")
             self.emotion_detector = None
@@ -123,6 +147,12 @@ class HybridAttendanceSystem:
         except Exception as e:
             print(f"Warning: Failed to load Glasses Detector: {e}")
             self.glasses_detector = None
+
+        try:
+            self.spoof_detector = self._make_spoof_detector(self.config["spoof_model_path"])
+        except Exception as e:
+            print(f"Warning: Failed to load Anti-Spoofing Detector: {e}")
+            self.spoof_detector = None
 
         self._update_db_cache()
         self.is_initialized = True
@@ -155,6 +185,20 @@ class HybridAttendanceSystem:
                         embs.append(emb)
                 if embs:
                     self.db_embeddings[person_dir] = embs
+
+    @staticmethod
+    def _square_crop_with_margin(frame, x, y, w, h, margin=0.20):
+        """Return a square face crop expanded by margin on each side, clamped to frame."""
+        fh, fw = frame.shape[:2]
+        side = int(max(w, h) * (1.0 + 2.0 * margin))
+        cx, cy = x + w // 2, y + h // 2
+        x1 = max(cx - side // 2, 0)
+        y1 = max(cy - side // 2, 0)
+        x2 = min(x1 + side, fw)
+        y2 = min(y1 + side, fh)
+        x1 = max(x2 - side, 0)
+        y1 = max(y2 - side, 0)
+        return frame[y1:y2, x1:x2]
 
     def _cosine_similarity(self, emb1, emb2):
         """
@@ -255,25 +299,37 @@ class HybridAttendanceSystem:
             info["cx"], info["cy"] = cx, cy
             info["bbox"] = (x, y, w, h)
             info["missing_since"] = None
-            
-            # Anti-spoofing (glasses) pathway
-            if self.config["spoofing_active"] and self.glasses_detector is not None:
+            info["spoof_status"] = ""
+
+            # Glasses detection pathway
+            if self.config["glasses_active"] and self.glasses_detector is not None:
                 face_crop_bgr = frame[y:y+h, x:x+w]
                 if face_crop_bgr.size > 0:
                     try:
-                        spoof_res = self.glasses_detector.predict_with_decision(face_crop_bgr)
-                        if spoof_res["decision"] == "block":
-                            info["spoof_status"] = "SPOOF (Sunglasses)"
+                        glasses_res = self.glasses_detector.predict_with_decision(face_crop_bgr)
+                        if glasses_res["decision"] == "block":
+                            info["spoof_status"] = "Sunglasses Detected"
                         else:
-                            info["spoof_status"] = "Passed"
+                            info["spoof_status"] = glasses_res.get("label", "").replace("_", " ").title()
                     except Exception as e:
-                        pass
-            else:
-                info["spoof_status"] = ""
+                        print(f"Glasses detection error: {e}")
+            # Anti-spoofing (liveness) pathway
+            if self.config["spoofing_active"] and self.spoof_detector is not None:
+                face_crop_bgr = frame[y:y+h, x:x+w]
+                if face_crop_bgr.size > 0:
+                    try:
+                        spoof_res = self.spoof_detector.predict_with_decision(face_crop_bgr)
+                        liveness_status = "Liveness: Real" if spoof_res["decision"] == "allow" else "Liveness: SPOOF"
+                        if info["spoof_status"]:
+                            info["spoof_status"] += f" | {liveness_status}"
+                        else:
+                            info["spoof_status"] = liveness_status
+                    except Exception as e:
+                        print(f"Anti-spoofing error: {e}")
 
             # Emotion pathway
             if self.config["emotion_active"] and self.emotion_detector is not None:
-                face_crop_bgr = frame[y:y+h, x:x+w]
+                face_crop_bgr = self._square_crop_with_margin(frame, x, y, w, h)
                 if face_crop_bgr.size > 0:
                     emotion_result = self.emotion_detector.predict_from_face(face_crop_bgr)
                     if emotion_result.get("face_detected"):
@@ -286,7 +342,7 @@ class HybridAttendanceSystem:
                 info["emotion_emoji"] = ""
 
             # Identity pathway
-            if self.config["identity_active"]:
+            if self.config["identity_active"] and self.embedding_model is not None:
                 y_id = y + int(0.15 * h)
                 h_id = int(0.70 * h)
                 x_id = x + int(0.15 * w)
@@ -355,8 +411,8 @@ class HybridAttendanceSystem:
             
             # Annotation
             color = (0, 255, 0) if info["name"] != "Unknown" else (0, 0, 255)
-            if info["spoof_status"] and "SPOOF" in info["spoof_status"]:
-                color = (0, 0, 255) # Red for spoof
+            if info["spoof_status"] and ("SPOOF" in info["spoof_status"] or "Sunglasses" in info["spoof_status"]):
+                color = (0, 0, 255)
 
             cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
             cv2.putText(frame, info["name"], (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
@@ -386,4 +442,8 @@ class HybridAttendanceSystem:
         ret, frame = cap.read()
         if not ret:
             return False, None
-        return True, self.process_frame(frame)
+        try:
+            return True, self.process_frame(frame)
+        except Exception as e:
+            print(f"Frame processing error: {e}")
+            return True, frame

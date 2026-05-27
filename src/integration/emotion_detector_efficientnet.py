@@ -31,8 +31,8 @@ EMOTION_FEEDBACK = {
 }
 
 DEFAULT_MODEL_PATHS = [
-    "models/emotion_detection_2/efficientnet/emotion_efficientnet.keras",
     "models/emotion_detection_2/efficientnet/emotion_efficientnet.h5",
+    "models/emotion_detection_2/efficientnet/emotion_efficientnet.keras",
 ]
 
 
@@ -109,7 +109,6 @@ class EmotionDetectorEfficientNet:
         min_margin: float = 0.08,
     ):
         self.model_path = model_path
-        self.input_size = (96, 96)
         self.smoother = PredictionSmoother(window_size=smoothing)
         self.tracker = StableEmotionTracker(
             stable_frames=stable_frames,
@@ -117,6 +116,8 @@ class EmotionDetectorEfficientNet:
             min_margin=min_margin,
         )
         self.model = self._load_model()
+        self.input_size = self._get_input_size()
+        self.smoothing_enabled = True
 
     def _load_model(self) -> tf.keras.Model:
         candidates = [self.model_path] if self.model_path else DEFAULT_MODEL_PATHS
@@ -129,11 +130,19 @@ class EmotionDetectorEfficientNet:
             "Train first: python src/training/emotion_detection_2/train_emotion_efficientnet.py"
         )
 
+    def _get_input_size(self) -> tuple[int, int]:
+        shape = self.model.input_shape
+        if isinstance(shape, list):
+            shape = shape[0]
+        _, h, w, _ = shape
+        return int(w), int(h)
+
     def _preprocess(self, face_bgr: np.ndarray) -> np.ndarray:
         face_rgb = cv2.cvtColor(face_bgr, cv2.COLOR_BGR2RGB)
         face_resized = cv2.resize(face_rgb, self.input_size, interpolation=cv2.INTER_AREA)
-        face_float = face_resized.astype(np.float32) / 255.0
-        return np.expand_dims(face_float, axis=0)
+        face_float = face_resized.astype(np.float32)  # keep 0-255 range for preprocess_input
+        face_preprocessed = tf.keras.applications.efficientnet.preprocess_input(face_float)
+        return np.expand_dims(np.array(face_preprocessed), axis=0)
 
     def _top_predictions(self, probs: np.ndarray, top_k: int = 3):
         indices = np.argsort(probs)[::-1][:top_k]
@@ -158,20 +167,26 @@ class EmotionDetectorEfficientNet:
 
         batch = self._preprocess(face_bgr)
         raw_probs = self.model.predict(batch, verbose=0)[0]
-        smooth_probs = self.smoother.update(raw_probs)
 
-        top = self._top_predictions(smooth_probs)
-        top_emotion, top_conf = top[0]
-        margin = top_conf - top[1][1] if len(top) > 1 else 1.0
+        if self.smoothing_enabled:
+            probs = self.smoother.update(raw_probs)
+            top = self._top_predictions(probs)
+            top_emotion, top_conf = top[0]
+            margin = top_conf - top[1][1] if len(top) > 1 else 1.0
+            stable = self.tracker.update(top_emotion, top_conf, margin)
+            display_emotion = stable or top_emotion
+        else:
+            probs = raw_probs
+            top = self._top_predictions(probs)
+            top_emotion, top_conf = top[0]
+            display_emotion = top_emotion
 
-        stable = self.tracker.update(top_emotion, top_conf, margin)
-        display_emotion = stable or top_emotion
         feedback = EMOTION_FEEDBACK.get(display_emotion, {"emoji": "", "message": ""})
 
         return {
             "face_detected": True,
             "emotion": display_emotion,
-            "confidence": float(smooth_probs[CLASSES.index(display_emotion)]),
+            "confidence": float(probs[CLASSES.index(display_emotion)]),
             "emoji": feedback["emoji"],
             "message": feedback["message"],
             "face_box": None,
