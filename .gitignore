@@ -7,14 +7,26 @@ env/
 # Python caches
 __pycache__/
 *.py[cod]
-*$py.class
+*.py.class
 .pytest_cache/
 
 # Datasets
 data/
 
-# Model checkpoints and logs
+# Ignore only archived/temporary model files
+models/ignore/
+
+# Logs/debug outputs
 logs/
+debug/
+
+# Archived/ignored training experiments
+src/training/ignore/
+
+# Local webcam/demo scripts
+src/integration/realtime_emotion_webcam.py
+src/integration/test_emotion_detector.py
+src/integration/test_glasses_webcam.py
 
 # Jupyter
 .ipynb_checkpoints/
@@ -22,3 +34,7 @@ logs/
 # IDEs
 .vscode/
 .idea/
+
+# Documents and Texts
+*.pdf
+*.txt
