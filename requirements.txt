@@ -11,3 +11,12 @@ seaborn==0.13.2
 tqdm==4.67.3
 pyyaml==6.0.3
 pillow==12.2.0
+jupyter
+FreeSimpleGUI
+# TensorBoard and TensorFlow ecosystem
+tensorboard==2.10.1
+tensorboard-data-server==0.6.1
+tensorboard-plugin-wit==1.8.1
+tensorflow-estimator==2.10.0
+tensorflow-io-gcs-filesystem==0.31.0
+tensorflow-directml-plugin==0.4.0.dev230202

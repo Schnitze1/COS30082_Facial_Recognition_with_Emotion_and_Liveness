@@ -33,23 +33,19 @@ except ModuleNotFoundError as exc:
     ) from exc
 
 
-# ----------------------------------------------------------------------
 # Paths and model configuration
-# ----------------------------------------------------------------------
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 EMOTION_MODEL_PATHS = {
     "residual": os.path.join(
         PROJECT_ROOT,
         "models",
-        "emotion_detection",
-        "residual",
+        "checkpoints",
         "emotion_cnn_residual.h5",
     ),
     "vanilla": os.path.join(
         PROJECT_ROOT,
         "models",
-        "emotion_detection",
-        "vanilla",
+        "checkpoints",
         "emotion_cnn_vanilla.h5",
     ),
 }
@@ -132,9 +128,7 @@ def resolve_emotion_model_path(model_path=None, model_name=DEFAULT_MODEL_NAME):
     return EMOTION_MODEL_PATHS[model_name]
 
 
-# ----------------------------------------------------------------------
 # Prediction smoother
-# ----------------------------------------------------------------------
 class PredictionSmoother:
     """
     Averages the last few prediction probability vectors.
@@ -154,9 +148,7 @@ class PredictionSmoother:
         self.history.clear()
 
 
-# ----------------------------------------------------------------------
 # Stable emotion tracker
-# ----------------------------------------------------------------------
 class StableEmotionTracker:
     """
     Stabilizes emotion output for attendance-style use.
@@ -218,9 +210,7 @@ class StableEmotionTracker:
         self.candidate_count = 0
 
 
-# ----------------------------------------------------------------------
 # Main reusable emotion detector
-# ----------------------------------------------------------------------
 class EmotionDetector:
     """
     Reusable wrapper around the trained emotion Keras model.
@@ -273,9 +263,7 @@ class EmotionDetector:
 
         self.face_detector = self._build_face_detector()
 
-    # ------------------------------------------------------------------
     # Final integration method
-    # ------------------------------------------------------------------
     def predict_from_face(self, face_bgr):
         """
         Predict emotion from a cropped OpenCV face image.
@@ -317,9 +305,7 @@ class EmotionDetector:
             top_predictions=top_predictions,
         )
 
-    # ------------------------------------------------------------------
     # Temporary testing method
-    # ------------------------------------------------------------------
     def predict_from_frame(self, frame_bgr):
         """
         Predict emotion from a full webcam frame.
@@ -357,9 +343,7 @@ class EmotionDetector:
         self.smoother.reset()
         self.tracker.reset()
 
-    # ------------------------------------------------------------------
     # Face detection helpers for predict_from_frame()
-    # ------------------------------------------------------------------
     def _build_face_detector(self):
         """Create the local OpenCV detector used only by the standalone test path."""
         cascade_path = os.path.join(
@@ -420,9 +404,7 @@ class EmotionDetector:
 
         return face_crop, square_box
 
-    # ------------------------------------------------------------------
     # Preprocessing and prediction helpers
-    # ------------------------------------------------------------------
     def _preprocess_face(self, face_bgr):
         """
         Convert OpenCV BGR face crop into model input.
@@ -490,9 +472,7 @@ class EmotionDetector:
             "top_predictions": [],
         }
 
-    # ------------------------------------------------------------------
     # Model loading helpers
-    # ------------------------------------------------------------------
     def _get_model_input_size(self, model):
         """Read the saved model input shape so preprocessing stays model-specific."""
         input_shape = model.input_shape[0] if isinstance(model.input_shape, list) else model.input_shape
@@ -502,7 +482,6 @@ class EmotionDetector:
         if height is None or width is None or channels != 3:
             raise ValueError(f"Unsupported model input shape: {input_shape}")
 
-        print(f"Emotion model input size: {height}x{width}x{channels}")
 
         return int(width), int(height)
 
@@ -511,8 +490,6 @@ class EmotionDetector:
         if not os.path.isfile(model_path):
             raise FileNotFoundError(f"Emotion model not found: {model_path}")
 
-        print("TensorFlow version:", tf.__version__)
-        print("Loading emotion model:", model_path)
 
         custom_objects = self._build_compatibility_objects()
 

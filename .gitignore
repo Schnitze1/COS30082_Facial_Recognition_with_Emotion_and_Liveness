@@ -34,3 +34,7 @@ src/integration/test_glasses_webcam.py
 # IDEs
 .vscode/
 .idea/
+
+# Documents and Texts
+*.pdf
+*.txt
