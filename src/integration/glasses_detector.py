@@ -25,7 +25,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MODEL_PATH = (
     PROJECT_ROOT
     / "models"
-    / "checkpoints"
+    / "glasses_detection"
+    / "residual"
     / "glasses_detector_residual_cnn.keras"
 )
 
@@ -70,6 +71,7 @@ class GlassesDetector:
         if not self.model_path.is_file():
             raise FileNotFoundError(f"Glasses detector model not found: {self.model_path}")
 
+        print(f"Loading glasses detector model: {self.model_path}")
         self.model = tf.keras.models.load_model(str(self.model_path), compile=False)
         # The input size is read from the saved model so callers do not need to
         # know the training image size when integrating the detector.

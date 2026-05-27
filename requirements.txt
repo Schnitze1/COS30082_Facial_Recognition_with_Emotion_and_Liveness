@@ -1,13 +1,17 @@
-tensorflow==2.10.0
-numpy<2
-opencv-python
-scikit-learn
-matplotlib
+tensorflow==2.21.0
+keras==3.14.1
+numpy==2.4.4
+opencv-python==4.13.0.92
+h5py==3.14.0
+scikit-learn==1.8.0
+scipy==1.17.1
+matplotlib==3.10.9
+pandas==3.0.3
+seaborn==0.13.2
+tqdm==4.67.3
+pyyaml==6.0.3
+pillow==12.2.0
 jupyter
-pandas
-seaborn
-tqdm
-pyyaml
 FreeSimpleGUI
 # TensorBoard and TensorFlow ecosystem
 tensorboard==2.10.1
