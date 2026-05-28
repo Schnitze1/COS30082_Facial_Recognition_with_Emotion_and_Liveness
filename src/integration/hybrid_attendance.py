@@ -291,7 +291,8 @@ class HybridAttendanceSystem:
                     "spoken": "",
                     "emotion_label": "",
                     "emotion_emoji": "",
-                    "spoof_status": ""
+                    "spoof_status": "",
+                    "spoof_score_buffer": deque(maxlen=8)
                 }
             
             current_matched_ids.add(best_id)
@@ -318,8 +319,11 @@ class HybridAttendanceSystem:
                 face_crop_bgr = frame[y:y+h, x:x+w]
                 if face_crop_bgr.size > 0:
                     try:
-                        spoof_res = self.spoof_detector.predict_with_decision(face_crop_bgr)
-                        liveness_status = "Liveness: Real" if spoof_res["decision"] == "allow" else "Liveness: SPOOF"
+                        spoof_res = self.spoof_detector.predict(face_crop_bgr)
+                        info["spoof_score_buffer"].append(spoof_res["score"])
+                        avg_score = sum(info["spoof_score_buffer"]) / len(info["spoof_score_buffer"])
+                        is_real_smoothed = avg_score >= self.spoof_detector.threshold
+                        liveness_status = "Liveness: Real" if is_real_smoothed else "Liveness: SPOOF"
                         if info["spoof_status"]:
                             info["spoof_status"] += f" | {liveness_status}"
                         else:

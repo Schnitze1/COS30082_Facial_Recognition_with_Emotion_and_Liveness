@@ -27,7 +27,7 @@ if not MODEL_PATH.exists():
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 IMG_SIZE  = 128       # must match training
-THRESHOLD = 0.1      # score >= threshold → real, below → spoof
+THRESHOLD = 0.65     # score >= threshold → real, below → spoof
 
 
 class AntispoofingDetector:
