@@ -7,10 +7,8 @@ dataset, and writes reports under reports/emotion_detection/.
 """
 
 from __future__ import annotations
-
 import json
 from pathlib import Path
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -24,7 +22,7 @@ DATA_DIR = PROJECT_ROOT / "data" / "emotion_detection" / "AffecNet"
 TEST_DIR = DATA_DIR / "Test"
 REPORT_DIR = PROJECT_ROOT / "reports" / "emotion_detection"
 
-# Keep this order identical to training/integration so prediction indices map
+# Order identical to training/integration so prediction indices map
 # to the same emotion labels in every report.
 CLASSES = [
     "anger",

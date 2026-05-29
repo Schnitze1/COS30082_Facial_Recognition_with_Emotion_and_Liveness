@@ -17,7 +17,7 @@ import cv2
 from pathlib import Path
 import tensorflow as tf
 
-# ── Paths ──────────────────────────────────────────────────────────────────────
+# Paths  
 BASE_DIR   = Path(__file__).resolve().parents[2]   # project root
 MODEL_PATH = BASE_DIR / "models" / "anti_spoofing" / "antispoofing_model.keras"
 
@@ -25,18 +25,13 @@ MODEL_PATH = BASE_DIR / "models" / "anti_spoofing" / "antispoofing_model.keras"
 if not MODEL_PATH.exists():
     MODEL_PATH = BASE_DIR / "models" / "anti_spoofing" / "antispoofing_model.h5"
 
-# ── Config ─────────────────────────────────────────────────────────────────────
-IMG_SIZE  = 128       # must match training
-THRESHOLD = 0.65     # score >= threshold → real, below → spoof
-
+#  Config 
+IMG_SIZE  = 128      
+THRESHOLD = 0.65     
 
 class AntispoofingDetector:
     """
     Liveness detector for the attendance system.
-
-    Example
-    -------
-    detector = AntispoofingDetector()
 
     # Pass a BGR face crop (from OpenCV) or an RGB numpy array
     result = detector.predict(face_crop)
@@ -77,13 +72,11 @@ class AntispoofingDetector:
         """
         Run liveness detection on a face crop.
 
-        Parameters
-        ----------
+        Parameters:
         face_image : np.ndarray
             A face crop as a numpy array (BGR or RGB, any size).
 
-        Returns
-        -------
+        Returns:
         dict with keys:
             label   : "real" or "spoof"
             score   : float — probability of being a real face (0-1)
@@ -100,8 +93,6 @@ class AntispoofingDetector:
             "is_real": is_real,
         }
 
-
-# ── Quick test ─────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     detector = AntispoofingDetector()
 
@@ -114,4 +105,3 @@ if __name__ == "__main__":
         print(f"Result: {result}")
     else:
         print("Usage: py -3.11 antispoofing_detector.py <path_to_image>")
-        print("Or import AntispoofingDetector in your integration code.")

@@ -13,7 +13,7 @@ import seaborn as sns
 import tensorflow as tf
 from sklearn.metrics import classification_report, confusion_matrix
 
-# ── Config (local paths) ───────────────────────────────────
+#  Config 
 CLASSES = ["anger", "contempt", "disgust", "fear", "happy", "neutral", "sad", "surprise"]
 DATASET_TEST = "data/Test"
 MODEL_DIR = "models/emotion_detection_2/efficientnet"
@@ -25,7 +25,7 @@ NUM_CLASSES = len(CLASSES)
 AUTOTUNE = tf.data.AUTOTUNE
 
 
-# ── Data ────────────────────────────────────────────────────
+# Data   
 def collect_images(root):
     paths, labels = [], []
     for idx, cls in enumerate(CLASSES):

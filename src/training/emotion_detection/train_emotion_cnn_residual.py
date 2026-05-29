@@ -25,9 +25,7 @@ np.random.seed(42)
 tf.random.set_seed(42)
 
 
-# ----------------------------------------------------------------------
 # 1. Config
-# ----------------------------------------------------------------------
 class Config:
     """Configuration for the residual emotion CNN experiment.
 
@@ -83,9 +81,7 @@ class Config:
         print("IMG_SIZE:", cls.IMG_SIZE)
 
 
-# ----------------------------------------------------------------------
 # 2. Building blocks
-# ----------------------------------------------------------------------
 def se_block(x, reduction=8, name=None):
     """Apply lightweight channel attention to recalibrate feature maps."""
     channels = int(x.shape[-1])
@@ -123,9 +119,7 @@ def residual_block(x, filters, stride=1, use_se=False, l2_reg=None, name=None):
     return x
 
 
-# ----------------------------------------------------------------------
 # 3. Model
-# ----------------------------------------------------------------------
 class BestEmotionCNN:
     """Residual CNN trained from scratch for stronger emotion feature learning."""
 
@@ -170,9 +164,7 @@ class BestEmotionCNN:
         return self.model
 
 
-# ----------------------------------------------------------------------
 # 4. Data pipeline (tf.data — faster than ImageDataGenerator)
-# ----------------------------------------------------------------------
 def resolve_class_folder_names(root_dir, classes):
     """Resolve class folders case-insensitively while preserving label order."""
     if not os.path.isdir(root_dir):
@@ -284,9 +276,7 @@ def load_datasets(cfg):
     return train_ds, val_ds, test_ds
 
 
-# ----------------------------------------------------------------------
 # 5. Main
-# ----------------------------------------------------------------------
 if __name__ == "__main__":
     config = Config()
     config.print_info()

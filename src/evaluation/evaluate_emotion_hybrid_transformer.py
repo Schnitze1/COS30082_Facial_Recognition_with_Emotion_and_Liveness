@@ -15,7 +15,7 @@ import tensorflow as tf
 from tensorflow.keras import layers
 from sklearn.metrics import classification_report, confusion_matrix
 
-# ── Config (local paths) ───────────────────────────────────
+# Config 
 CLASSES = ["anger", "contempt", "disgust", "fear", "happy", "neutral", "sad", "surprise"]
 DATASET_TEST = "data/Test"
 MODEL_DIR = "models/emotion_detection_2/hybrid_transformer"
@@ -27,7 +27,7 @@ NUM_CLASSES = len(CLASSES)
 AUTOTUNE = tf.data.AUTOTUNE
 
 
-# ── Custom layers (must match training definitions) ─────────
+# Custom layers
 class PatchPositionEmbedding(layers.Layer):
     def __init__(self, num_patches, embed_dim, **kw):
         super().__init__(**kw)
@@ -82,7 +82,7 @@ CUSTOM_OBJECTS = {
 }
 
 
-# ── Data ────────────────────────────────────────────────────
+# Data 
 def collect_images(root):
     paths, labels = [], []
     for idx, cls in enumerate(CLASSES):
@@ -115,7 +115,7 @@ def build_test_dataset():
     return ds, labels
 
 
-# ── Evaluation ──────────────────────────────────────────────
+# Evaluation 
 def evaluate():
     os.makedirs(REPORT_DIR, exist_ok=True)
 

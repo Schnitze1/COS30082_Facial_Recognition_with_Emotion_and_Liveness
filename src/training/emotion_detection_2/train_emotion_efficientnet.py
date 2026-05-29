@@ -161,7 +161,7 @@ def main():
     if gpus:
         print(f"GPU(s) detected: {[g.name for g in gpus]}")
     else:
-        print("⚠ No GPU found — training will be very slow on CPU!")
+        print(" No GPU found — training will be very slow on CPU!")
         print("  On Kaggle: Settings → Accelerator → GPU T4 x2")
 
     os.makedirs(MODEL_DIR, exist_ok=True)

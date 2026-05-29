@@ -188,7 +188,7 @@ def build_model():
 # ── Training ────────────────────────────────────────────────
 def main():
     gpus = tf.config.list_physical_devices("GPU")
-    print(f"GPU(s): {[g.name for g in gpus]}" if gpus else "⚠ No GPU found")
+    print(f"GPU(s): {[g.name for g in gpus]}" if gpus else " No GPU found")
 
     os.makedirs(MODEL_DIR, exist_ok=True)
     train_ds, val_ds, test_ds, class_weights, steps_per_epoch = load_data()

@@ -21,9 +21,7 @@ np.random.seed(42)
 tf.random.set_seed(42)
 
 
-# ----------------------------------------------------------------------
 # Configuration
-# ----------------------------------------------------------------------
 class Config:
     """Centralises dataset paths, hyperparameters, and output locations.
 
@@ -84,9 +82,7 @@ class Config:
         print(f"Test exists: {os.path.isdir(cls.TEST_IMG_DIR)}")
 
 
-# ----------------------------------------------------------------------
 # Dataset Loading and Generators
-# ----------------------------------------------------------------------
 class EmotionDataLoader:
     """Builds the folder-based AffectNet training pipeline.
 
@@ -282,9 +278,7 @@ class EmotionDataLoader:
         print(f"Max pixel value: {image_batch.max():.4f}")
 
 
-# ----------------------------------------------------------------------
 # Vanilla CNN Architecture
-# ----------------------------------------------------------------------
 class CustomEmotionCNN:
     """Vanilla custom CNN trained from scratch for eight emotion classes."""
 
@@ -365,9 +359,7 @@ class CustomEmotionCNN:
         return self.model
 
 
-# ----------------------------------------------------------------------
 # Training, Evaluation, and Export
-# ----------------------------------------------------------------------
 class EmotionTrainer:
     """Handles fitting, validation checkpointing, evaluation, and history export."""
 
@@ -472,9 +464,7 @@ class EmotionTrainer:
         print(f"Training history saved to {self.config.HISTORY_SAVE_PATH}")
 
 
-# ----------------------------------------------------------------------
 # Script Entry Point
-# ----------------------------------------------------------------------
 if __name__ == "__main__":
     # Configuration and path diagnostics
     config = Config()

@@ -36,9 +36,7 @@ except ModuleNotFoundError as exc:
     ) from exc
 
 
-# ----------------------------------------------------------------------
 # Project paths and model configuration
-# ----------------------------------------------------------------------
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 DEFAULT_MODEL_PATH = os.path.join(
     PROJECT_ROOT, "models", "emotion_detection", "residual", "emotion_cnn_residual.h5"
@@ -59,39 +57,39 @@ CLASSES = [
 
 EMOTION_FEEDBACK = {
     "happy": {
-        "emoji": "😊",
+        "emoji": "",
         "message": "You look happy today!",
     },
     "neutral": {
-        "emoji": "😐",
+        "emoji": "",
         "message": "Neutral mood detected.",
     },
     "sad": {
-        "emoji": "😟",
+        "emoji": "",
         "message": "You seem a bit low. Take a short break.",
     },
     "anger": {
-        "emoji": "😠",
+        "emoji": "",
         "message": "You seem frustrated. Try taking a deep breath.",
     },
     "fear": {
-        "emoji": "😨",
+        "emoji": "",
         "message": "Anxious expression detected.",
     },
     "surprise": {
-        "emoji": "😲",
+        "emoji": "",
         "message": "Something caught your attention!",
     },
     "disgust": {
-        "emoji": "🤢",
+        "emoji": "",
         "message": "Discomfort detected.",
     },
     "contempt": {
-        "emoji": "🙄",
+        "emoji": "",
         "message": "Contempt-like expression detected.",
     },
     "uncertain": {
-        "emoji": "🤔",
+        "emoji": "",
         "message": "Expression unclear.",
     },
 }
@@ -105,9 +103,7 @@ NEWER_KERAS_KEYS_TO_DROP = {
 }
 
 
-# ----------------------------------------------------------------------
 # Arguments
-# ----------------------------------------------------------------------
 def parse_args():
     parser = argparse.ArgumentParser(description="Run real-time emotion detection from webcam.")
 
@@ -237,9 +233,7 @@ def parse_args():
     return parser.parse_args()
 
 
-# ----------------------------------------------------------------------
 # Model loading and compatibility helpers
-# ----------------------------------------------------------------------
 def choose_preprocess_mode(model_path, requested_mode):
     if requested_mode != "auto":
         return requested_mode
@@ -375,9 +369,7 @@ def get_model_input_size(model):
     return int(width), int(height)
 
 
-# ----------------------------------------------------------------------
 # Camera and face detection
-# ----------------------------------------------------------------------
 def build_face_detector():
     cascade_path = os.path.join(cv2.data.haarcascades, "haarcascade_frontalface_default.xml")
     detector = cv2.CascadeClassifier(cascade_path)
@@ -459,9 +451,7 @@ def open_camera(camera_index, backend_name, allow_dark_camera=False):
     )
 
 
-# ----------------------------------------------------------------------
 # Face crop and preprocessing
-# ----------------------------------------------------------------------
 def get_square_face_box(frame, x, y, w, h, margin):
     frame_h, frame_w = frame.shape[:2]
 
@@ -501,9 +491,7 @@ def preprocess_face(face_bgr, img_size, preprocess_mode):
     return np.expand_dims(face_rgb, axis=0)
 
 
-# ----------------------------------------------------------------------
 # Prediction smoothing and stable emotion logic
-# ----------------------------------------------------------------------
 class PredictionSmoother:
     def __init__(self, window_size):
         self.history = deque(maxlen=max(1, int(window_size)))
@@ -595,9 +583,7 @@ def predict_emotion(model, face_bgr, img_size, preprocess_mode, smoother):
     return top_predictions
 
 
-# ----------------------------------------------------------------------
 # Face selection
-# ----------------------------------------------------------------------
 def select_faces(faces, frame_shape, all_faces=False):
     if len(faces) == 0:
         return []
@@ -631,9 +617,7 @@ def select_faces(faces, frame_shape, all_faces=False):
     return faces[:1]
 
 
-# ----------------------------------------------------------------------
 # Drawing helpers
-# ----------------------------------------------------------------------
 def draw_prediction(frame, x, y, w, h, emotion, confidence):
     color = (0, 255, 0)
 
@@ -761,9 +745,7 @@ def save_debug_crop(debug_dir, face_bgr, img_size, preprocess_mode, frame_count)
     )
 
 
-# ----------------------------------------------------------------------
 # Main webcam loop
-# ----------------------------------------------------------------------
 def run_webcam(model, args, img_size, preprocess_mode):
     detector = build_face_detector()
     cap = open_camera(args.camera, args.backend, args.allow_dark_camera)
@@ -931,9 +913,7 @@ def run_webcam(model, args, img_size, preprocess_mode):
     cv2.destroyAllWindows()
 
 
-# ----------------------------------------------------------------------
 # Entry point
-# ----------------------------------------------------------------------
 def main():
     args = parse_args()
 

@@ -21,9 +21,7 @@ np.random.seed(SEED)
 tf.random.set_seed(SEED)
 
 
-# ----------------------------------------------------------------------
 # Configuration
-# ----------------------------------------------------------------------
 class Config:
     """Training configuration for the residual glasses detector.
 
@@ -54,9 +52,7 @@ class Config:
     LEARNING_RATE = 1e-3
 
 
-# ----------------------------------------------------------------------
 # Dataset Validation and Loading
-# ----------------------------------------------------------------------
 def validate_split_dataset():
     """Fail early if a train/validation/test split is missing or incomplete."""
     for split_dir in [Config.TRAIN_DIR, Config.VAL_DIR, Config.TEST_DIR]:
@@ -117,9 +113,7 @@ def load_datasets():
     )
 
 
-# ----------------------------------------------------------------------
 # Model Architecture
-# ----------------------------------------------------------------------
 def conv_block(x, filters, name):
     """Extract local visual features while reducing spatial resolution."""
     x = layers.Conv2D(filters, 3, padding="same", use_bias=False, name=f"{name}_conv")(x)
@@ -193,9 +187,7 @@ def build_model():
     return models.Model(inputs=inputs, outputs=outputs, name="GlassesResidualCNN")
 
 
-# ----------------------------------------------------------------------
 # Class Weighting and History Export
-# ----------------------------------------------------------------------
 def compute_class_weights():
     """Compute balanced class weights from training-folder frequencies."""
     labels = []
@@ -258,9 +250,7 @@ def save_training_history(history):
     print(f"Saved training curves: {Config.CURVES_PATH}")
 
 
-# ----------------------------------------------------------------------
 # Training Entry Point
-# ----------------------------------------------------------------------
 def main():
     print("=== Glasses Detector Training ===")
     print(f"Dataset train: {Config.TRAIN_DIR}")

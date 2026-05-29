@@ -1,6 +1,4 @@
 """
-Reusable OOP emotion detection module for the attendance system.
-
 This module is designed for final integration with the group attendance pipeline.
 
 Main final-use method:
@@ -69,35 +67,35 @@ CLASSES = [
 
 EMOTION_FEEDBACK = {
     "happy": {
-        "emoji": "😊",
+        "emoji": "",
         "message": "You look happy today!",
     },
     "neutral": {
-        "emoji": "😐",
+        "emoji": "",
         "message": "Neutral mood detected.",
     },
     "sad": {
-        "emoji": "😟",
+        "emoji": "",
         "message": "You seem a bit low. Take a short break.",
     },
     "anger": {
-        "emoji": "😠",
+        "emoji": "",
         "message": "You seem frustrated. Try taking a deep breath.",
     },
     "fear": {
-        "emoji": "😨",
+        "emoji": "",
         "message": "Anxious expression detected.",
     },
     "surprise": {
-        "emoji": "😲",
+        "emoji": "",
         "message": "Something caught your attention!",
     },
     "disgust": {
-        "emoji": "🤢",
+        "emoji": "",
         "message": "Discomfort detected.",
     },
     "contempt": {
-        "emoji": "🙄",
+        "emoji": "",
         "message": "Contempt-like expression detected.",
     },
 }
@@ -210,11 +208,9 @@ class StableEmotionTracker:
         self.candidate_count = 0
 
 
-# Main reusable emotion detector
+# Main emotion detector
 class EmotionDetector:
     """
-    Reusable wrapper around the trained emotion Keras model.
-
     The final attendance system should pass a cropped face image to
     predict_from_face(). The full-frame predict_from_frame() method exists for
     standalone testing and should not replace the team's shared face crop logic.

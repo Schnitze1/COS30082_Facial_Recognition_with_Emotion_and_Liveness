@@ -7,7 +7,6 @@ Run from the project root:
 
 from pathlib import Path
 import json
-
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -105,7 +104,7 @@ def save_test_metrics(test_loss, test_accuracy, report_json):
 
 def collect_predictions(model, test_ds):
     """Collect model predictions and true labels in the same dataset order."""
-    print("Predicting test images...")
+    print("Predicting test images")
     probabilities = model.predict(test_ds, verbose=1)
     y_pred = np.argmax(probabilities, axis=1)
     y_true = np.concatenate([np.argmax(labels.numpy(), axis=1) for _, labels in test_ds])
@@ -204,7 +203,7 @@ def save_training_curves():
 
 def main():
     """Evaluate the already trained glasses detector without retraining it."""
-    print("=== Glasses Detector Evaluation ===")
+    print(" Glasses Evaluation")
     print(f"Model:     {MODEL_PATH}")
     print(f"Test data: {TEST_DIR}")
     print(f"Reports:   {REPORT_DIR}")
@@ -215,13 +214,13 @@ def main():
 
     test_ds = load_test_dataset()
 
-    print("Loading trained model...")
+    print("Loading trained model")
     # Loading with compile=False avoids depending on the original training
     # optimizer state; evaluation recompiles only the metrics needed here.
     model = tf.keras.models.load_model(str(MODEL_PATH), compile=False)
     model.compile(loss="categorical_crossentropy", metrics=["accuracy"])
 
-    print("Evaluating test accuracy...")
+    print("Evaluating test accuracy")
     test_loss, test_accuracy = model.evaluate(test_ds, verbose=1)
     print(f"Test loss:     {test_loss:.4f}")
     print(f"Test accuracy: {to_percent(test_accuracy):.2f}%")

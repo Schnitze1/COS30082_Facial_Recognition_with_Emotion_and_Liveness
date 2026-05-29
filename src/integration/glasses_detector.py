@@ -1,16 +1,9 @@
 """
-Reusable glasses/sunglasses detector for verification integration.
-
 The detector expects a cropped face image and predicts one of:
     glasses, no_glasses, sunglasses
 
 It can also accept a full webcam frame through predict_from_frame(frame_bgr),
 where face detection and consistent cropping are handled internally.
-
-Advisory status:
-    glasses    -> allow
-    no_glasses -> allow
-    sunglasses -> advisory
 """
 
 from collections import Counter, deque
@@ -56,8 +49,7 @@ GLASSES_STABILITY_MIN_FRAMES = 4
 
 
 class GlassesDetector:
-    """Reusable wrapper around the trained glasses/sunglasses Keras model.
-
+    """
     The attendance system may pass either a cropped face image to
     predict_with_decision() or a full webcam frame to predict_from_frame().
     This class handles model loading, preprocessing, prediction, and the

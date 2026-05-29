@@ -382,7 +382,7 @@ def main():
     trainer.export_history()
     trainer.export_h5()
 
-    print("\n✓ EfficientNet training complete!")
+    print("\n EfficientNet training complete!")
     print(f"  Model: {config.MODEL_SAVE_PATH}")
     print(f"  History: {config.HISTORY_SAVE_PATH}")
 

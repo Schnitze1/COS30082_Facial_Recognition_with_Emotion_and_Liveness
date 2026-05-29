@@ -20,14 +20,14 @@ import tensorflow as tf
 CLASSES = ["anger", "contempt", "disgust", "fear", "happy", "neutral", "sad", "surprise"]
 
 EMOTION_FEEDBACK = {
-    "happy":    {"emoji": "😊", "message": "You look happy today!"},
-    "neutral":  {"emoji": "😐", "message": "Neutral mood detected."},
-    "sad":      {"emoji": "😟", "message": "You seem a bit low..."},
-    "anger":    {"emoji": "😠", "message": "You seem frustrated..."},
-    "fear":     {"emoji": "😨", "message": "Anxious expression detected."},
-    "surprise": {"emoji": "😲", "message": "Something caught your attention!"},
-    "disgust":  {"emoji": "🤢", "message": "Discomfort detected."},
-    "contempt": {"emoji": "🙄", "message": "Contempt-like expression detected."},
+    "happy":    {"emoji": "", "message": "You look happy today!"},
+    "neutral":  {"emoji": "", "message": "Neutral mood detected."},
+    "sad":      {"emoji": "", "message": "You seem a bit low..."},
+    "anger":    {"emoji": "", "message": "You seem frustrated..."},
+    "fear":     {"emoji": "", "message": "Anxious expression detected."},
+    "surprise": {"emoji": "", "message": "Something caught your attention!"},
+    "disgust":  {"emoji": "", "message": "Discomfort detected."},
+    "contempt": {"emoji": "", "message": "Contempt-like expression detected."},
 }
 
 DEFAULT_MODEL_PATHS = [
@@ -36,9 +36,7 @@ DEFAULT_MODEL_PATHS = [
 ]
 
 
-# ---------------------------------------------------------------------------
 # Prediction smoothing / stability helpers
-# ---------------------------------------------------------------------------
 
 class PredictionSmoother:
     """Moving-average smoother over a sliding window of raw probability vectors."""
@@ -88,9 +86,7 @@ class StableEmotionTracker:
         self._pending_count = 0
 
 
-# ---------------------------------------------------------------------------
 # Main detector
-# ---------------------------------------------------------------------------
 
 class EmotionDetectorEfficientNet:
     """EfficientNet-B0 emotion detector with temporal smoothing.

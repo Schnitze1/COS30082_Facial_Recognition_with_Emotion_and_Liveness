@@ -25,14 +25,14 @@ from tensorflow.keras import layers
 CLASSES = ["anger", "contempt", "disgust", "fear", "happy", "neutral", "sad", "surprise"]
 
 EMOTION_FEEDBACK = {
-    "happy":    {"emoji": "😊", "message": "You look happy today!"},
-    "neutral":  {"emoji": "😐", "message": "Neutral mood detected."},
-    "sad":      {"emoji": "😟", "message": "You seem a bit low..."},
-    "anger":    {"emoji": "😠", "message": "You seem frustrated..."},
-    "fear":     {"emoji": "😨", "message": "Anxious expression detected."},
-    "surprise": {"emoji": "😲", "message": "Something caught your attention!"},
-    "disgust":  {"emoji": "🤢", "message": "Discomfort detected."},
-    "contempt": {"emoji": "🙄", "message": "Contempt-like expression detected."},
+    "happy":    {"emoji": "", "message": "You look happy today!"},
+    "neutral":  {"emoji": "", "message": "Neutral mood detected."},
+    "sad":      {"emoji": "", "message": "You seem a bit low..."},
+    "anger":    {"emoji": "", "message": "You seem frustrated..."},
+    "fear":     {"emoji": "", "message": "Anxious expression detected."},
+    "surprise": {"emoji": "", "message": "Something caught your attention!"},
+    "disgust":  {"emoji": "", "message": "Discomfort detected."},
+    "contempt": {"emoji": "", "message": "Contempt-like expression detected."},
 }
 
 DEFAULT_MODEL_PATHS = [
@@ -41,9 +41,7 @@ DEFAULT_MODEL_PATHS = [
 ]
 
 
-# ---------------------------------------------------------------------------
-# Custom layers (must exactly match training definitions)
-# ---------------------------------------------------------------------------
+# Custom layers
 
 class PatchPositionEmbedding(layers.Layer):
     def __init__(self, num_patches: int, embed_dim: int, **kwargs):
@@ -150,9 +148,7 @@ CUSTOM_OBJECTS = {
 }
 
 
-# ---------------------------------------------------------------------------
 # Prediction smoothing / stability helpers
-# ---------------------------------------------------------------------------
 
 class PredictionSmoother:
     def __init__(self, window_size: int = 3):
@@ -195,9 +191,7 @@ class StableEmotionTracker:
         self._pending_count = 0
 
 
-# ---------------------------------------------------------------------------
 # Main detector
-# ---------------------------------------------------------------------------
 
 class EmotionDetectorTransformer:
     """Hybrid CNN-Transformer emotion detector with temporal smoothing.
