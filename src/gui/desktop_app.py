@@ -30,6 +30,7 @@ sg.theme('MaterialDark')
 
 IDENTITY_MODELS = {
     'FNN': 'models/face_recognition/FNN.h5',
+    'MLP': 'models/face_recognition/mlp_best.h5',
 }
 EMOTION_MODELS = {
     'Residual CNN':       'models/emotion_detection/residual/emotion_cnn_residual.keras',
@@ -51,6 +52,7 @@ ANTISPOOF_MODELS = {
 
 TRAINING_SCRIPTS = {
     'FNN':                'src/training/train_fnn.py',
+    'MLP':                'src/training/train_mlp.py',
     'Residual CNN (Emotion)':  'src/training/emotion_detection/train_emotion_cnn_residual.py',
     'Vanilla CNN':        'src/training/emotion_detection/train_emotion_cnn_vanilla.py',
     'EfficientNet-B0':    'src/training/emotion_detection_2/train_emotion_efficientnet.py',

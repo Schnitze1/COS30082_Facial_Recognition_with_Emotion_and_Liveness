@@ -38,3 +38,5 @@ src/integration/test_glasses_webcam.py
 # Documents and Texts
 *.pdf
 *.txt
+group_report.md
+individual_report.md
