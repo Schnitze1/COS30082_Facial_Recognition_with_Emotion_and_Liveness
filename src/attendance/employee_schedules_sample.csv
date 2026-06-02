@@ -1,0 +1,6 @@
+employee_id,monday_start,monday_end,tuesday_start,tuesday_end,wednesday_start,wednesday_end,thursday_start,thursday_end,friday_start,friday_end,saturday_start,saturday_end,sunday_start,sunday_end,notes
+E001,09:00,17:00,09:00,17:00,09:00,17:00,09:00,17:00,09:00,17:00,OFF,OFF,OFF,OFF,Standard 9-5 Monday-Friday
+E002,08:30,16:30,08:30,16:30,08:30,16:30,08:30,16:30,08:30,16:30,OFF,OFF,OFF,OFF,Early start 8:30am
+E003,10:00,18:00,10:00,18:00,10:00,18:00,10:00,18:00,10:00,18:00,OFF,OFF,OFF,OFF,Late start 10:00am
+E004,09:00,17:00,09:00,17:00,09:00,17:00,09:00,17:00,09:00,17:00,09:00,13:00,OFF,OFF,Half day Saturday
+E005,09:00,17:00,OFF,OFF,09:00,17:00,09:00,17:00,09:00,17:00,OFF,OFF,OFF,OFF,Tuesday off
