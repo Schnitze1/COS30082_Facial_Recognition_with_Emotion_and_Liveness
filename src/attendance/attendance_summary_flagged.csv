@@ -1,0 +1,86 @@
+date,employee_id,name,expected_start,actual_start,status,deviation_minutes,notes
+2026-06-02,E002,Alice Johnson,08:30,N/A,ABSENT,N/A,
+2026-06-02,E003,Bob Smith,10:00,N/A,ABSENT,N/A,
+2026-06-02,E004,Charlie Brown,09:00,N/A,ABSENT,N/A,
+2026-06-02,UNKNOWN,Person_002,N/A,08:35,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_004,N/A,09:02,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Unknown_Visitor,N/A,14:30,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_003,N/A,10:15,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,E002,Alice Johnson,08:30,N/A,ABSENT,N/A,
+2026-06-03,E003,Bob Smith,10:00,N/A,ABSENT,N/A,
+2026-06-03,E004,Charlie Brown,09:00,N/A,ABSENT,N/A,
+2026-06-03,E005,Diana Prince,09:00,N/A,ABSENT,N/A,
+2026-06-03,UNKNOWN,Person_002,N/A,08:35,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_004,N/A,09:02,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Unknown_Visitor,N/A,14:30,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_003,N/A,10:15,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,E002,Alice Johnson,08:30,N/A,ABSENT,N/A,
+2026-06-02,E003,Bob Smith,10:00,N/A,ABSENT,N/A,
+2026-06-02,E004,Charlie Brown,09:00,N/A,ABSENT,N/A,
+2026-06-02,UNKNOWN,Person_004,N/A,09:02,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_002,N/A,08:35,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_003,N/A,10:15,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Unknown_Visitor,N/A,14:30,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,E002,Alice Johnson,08:30,N/A,ABSENT,N/A,
+2026-06-03,E003,Bob Smith,10:00,N/A,ABSENT,N/A,
+2026-06-03,E004,Charlie Brown,09:00,N/A,ABSENT,N/A,
+2026-06-03,E005,Diana Prince,09:00,N/A,ABSENT,N/A,
+2026-06-03,UNKNOWN,Person_004,N/A,09:02,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_002,N/A,08:35,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_003,N/A,10:15,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Unknown_Visitor,N/A,14:30,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,E002,Alice Johnson,08:30,N/A,ABSENT,N/A,
+2026-06-02,E003,Bob Smith,10:00,N/A,ABSENT,N/A,
+2026-06-02,E004,Charlie Brown,09:00,N/A,ABSENT,N/A,
+2026-06-02,UNKNOWN,Person_002,N/A,08:35,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Unknown_Visitor,N/A,14:30,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_003,N/A,10:15,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_004,N/A,09:02,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,E002,Alice Johnson,08:30,N/A,ABSENT,N/A,
+2026-06-03,E003,Bob Smith,10:00,N/A,ABSENT,N/A,
+2026-06-03,E004,Charlie Brown,09:00,N/A,ABSENT,N/A,
+2026-06-03,E005,Diana Prince,09:00,N/A,ABSENT,N/A,
+2026-06-03,UNKNOWN,Person_002,N/A,08:35,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Unknown_Visitor,N/A,14:30,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_003,N/A,10:15,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_004,N/A,09:02,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_001,N/A,09:00,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_002,N/A,08:35,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_003,N/A,10:15,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Unknown_Visitor,N/A,14:30,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_004,N/A,09:02,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_001,N/A,09:00,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_002,N/A,08:35,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_003,N/A,10:15,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Unknown_Visitor,N/A,14:30,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_004,N/A,09:02,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,E002,Alice Johnson,08:30,N/A,ABSENT,N/A,
+2026-06-02,E003,Bob Smith,10:00,N/A,ABSENT,N/A,
+2026-06-02,E004,Charlie Brown,09:00,N/A,ABSENT,N/A,
+2026-06-02,UNKNOWN,Person_003,N/A,10:15,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Unknown_Visitor,N/A,14:30,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_004,N/A,09:02,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_002,N/A,08:35,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,E002,Alice Johnson,08:30,N/A,ABSENT,N/A,
+2026-06-03,E003,Bob Smith,10:00,N/A,ABSENT,N/A,
+2026-06-03,E004,Charlie Brown,09:00,N/A,ABSENT,N/A,
+2026-06-03,E005,Diana Prince,09:00,N/A,ABSENT,N/A,
+2026-06-03,UNKNOWN,Person_003,N/A,10:15,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Unknown_Visitor,N/A,14:30,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_004,N/A,09:02,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_002,N/A,08:35,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,E002,Alice Johnson,08:30,N/A,ABSENT,N/A,
+2026-06-02,E003,Bob Smith,10:00,N/A,ABSENT,N/A,
+2026-06-02,E004,Charlie Brown,09:00,N/A,ABSENT,N/A,
+2026-06-02,UNKNOWN,Person_003,N/A,10:15,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Unknown_Visitor,N/A,14:30,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_004,N/A,09:02,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_002,N/A,08:35,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,E002,Alice Johnson,08:30,N/A,ABSENT,N/A,
+2026-06-03,E003,Bob Smith,10:00,N/A,ABSENT,N/A,
+2026-06-03,E004,Charlie Brown,09:00,N/A,ABSENT,N/A,
+2026-06-03,E005,Diana Prince,09:00,N/A,ABSENT,N/A,
+2026-06-03,UNKNOWN,Person_003,N/A,10:15,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Unknown_Visitor,N/A,14:30,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_004,N/A,09:02,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_002,N/A,08:35,UNKNOWN,N/A,Unrecognized face in attendance log

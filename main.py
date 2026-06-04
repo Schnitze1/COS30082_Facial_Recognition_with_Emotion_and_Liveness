@@ -32,25 +32,13 @@ EMOTION_MODELS = [
 
 
 class PipelineRunner:
-    """
-    Manages the execution of the entire COS30082 Facial Recognition pipeline.
-    """
     def __init__(self):
-        """
-        Initializes the PipelineRunner with the virtual environment python executable.
-        """
         self.python_exe = sys.executable
 
     def _clear_screen(self):
-        """
-        Clears the terminal screen.
-        """
         os.system('cls' if os.name == 'nt' else 'clear')
 
     def _print_menu(self):
-        """
-        Displays the main selection menu.
-        """
         print("\nCOS30082 Facial Recognition & Emotion Detection Pipeline")
         print("1. Build Datasets")
         print("2. Train Identity Models")
@@ -58,17 +46,11 @@ class PipelineRunner:
         print("4. Train Emotion Models")
         print("5. Evaluate Models")
         print("6. Launch Hybrid Attendance Demo")
+        print("7. Launch Attendance Management GUI")
         print("0. Exit")
 
     def _run_script(self, script_path: str, *args):
-        """
-        Executes a python script and halts on error.
-        
-        :param script_path: String path to the script to execute.
-        :param args: Variable length argument list to pass to the script.
-        """
         cmd = [self.python_exe, script_path] + list(args)
-        print(f"\nExecuting: {' '.join(cmd)}")
         try:
             subprocess.run(cmd, check=True)
         except subprocess.CalledProcessError as e:
@@ -78,13 +60,8 @@ class PipelineRunner:
         except KeyboardInterrupt:
             print("Execution interrupted by user.")
             sys.exit(1)
-        print("Done.\n")
 
     def _select_emotion_models_for_training(self):
-        """
-        Prompts the user to choose which emotion models to train.
-        Returns a list of training script paths.
-        """
         print("\nSelect emotion models to train:")
         for i, spec in enumerate(EMOTION_MODELS, start=1):
             print(f"  {i}. {spec['name']}")
@@ -106,9 +83,6 @@ class PipelineRunner:
         return [spec["train"] for spec in EMOTION_MODELS]
 
     def run_all(self):
-        """
-        Executes the entire end-to-end pipeline automatically.
-        """
         print("Starting automated pipeline execution.")
         
         print("\nPhase 1: Dataset Generation")
@@ -142,13 +116,10 @@ class PipelineRunner:
         print("Pipeline execution complete.")
 
     def run_interactive(self):
-        """
-        Starts the interactive CLI menu for manual script execution.
-        """
         while True:
             self._print_menu()
-            choice = input("\nSelect a phase to execute (0-6): ")
-            
+            choice = input("\nSelect a phase to execute (0-7): ")
+
             if choice == '1':
                 self._run_script("src/data/build_dataset.py")
                 self._run_script("src/data/build_lip_sequence_dataset.py")
@@ -170,16 +141,15 @@ class PipelineRunner:
                 self._run_script("src/evaluation/evaluate_emotion_hybrid_transformer.py")
             elif choice == '6':
                 self._run_script("src/gui/desktop_app.py")
+            elif choice == '7':
+                self._run_script("src/gui/attendance_gui.py")
             elif choice == '0':
                 print("Exiting pipeline.")
                 break
             else:
-                print("Invalid choice. Please enter a number between 0 and 6.")
+                print("Invalid choice. Please enter a number between 0 and 7.")
 
 def main():
-    """
-    Entry point for the application. Parses arguments to run automatically or interactively.
-    """
     parser = argparse.ArgumentParser(description="COS30082 Pipeline Manager")
     parser.add_argument('--all', action='store_true', help='Run the entire pipeline automatically')
     args = parser.parse_args()

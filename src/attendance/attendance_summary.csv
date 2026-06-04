@@ -1,0 +1,109 @@
+date,employee_id,name,expected_start,actual_start,status,deviation_minutes,notes
+2026-06-02,E001,Person_001,09:00,09:00,ON_TIME,0,
+2026-06-02,E002,Alice Johnson,08:30,N/A,ABSENT,N/A,
+2026-06-02,E003,Bob Smith,10:00,N/A,ABSENT,N/A,
+2026-06-02,E004,Charlie Brown,09:00,N/A,ABSENT,N/A,
+2026-06-02,E005,Diana Prince,OFF,N/A,OFF,N/A,
+2026-06-02,UNKNOWN,Person_002,N/A,08:35,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_004,N/A,09:02,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Unknown_Visitor,N/A,14:30,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_003,N/A,10:15,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,E001,Person_001,09:00,09:00,ON_TIME,0,
+2026-06-03,E002,Alice Johnson,08:30,N/A,ABSENT,N/A,
+2026-06-03,E003,Bob Smith,10:00,N/A,ABSENT,N/A,
+2026-06-03,E004,Charlie Brown,09:00,N/A,ABSENT,N/A,
+2026-06-03,E005,Diana Prince,09:00,N/A,ABSENT,N/A,
+2026-06-03,UNKNOWN,Person_002,N/A,08:35,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_004,N/A,09:02,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Unknown_Visitor,N/A,14:30,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_003,N/A,10:15,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-05-27 to 2026-06-04,WEEKLY_SUMMARY,"Total: 2 on-time, 0 late, 7 absent, 1 off",,,,,Unknown: 8
+2026-06-02,E001,Person_001,09:00,09:00,ON_TIME,0,
+2026-06-02,E002,Alice Johnson,08:30,N/A,ABSENT,N/A,
+2026-06-02,E003,Bob Smith,10:00,N/A,ABSENT,N/A,
+2026-06-02,E004,Charlie Brown,09:00,N/A,ABSENT,N/A,
+2026-06-02,E005,Diana Prince,OFF,N/A,OFF,N/A,
+2026-06-02,UNKNOWN,Person_004,N/A,09:02,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_002,N/A,08:35,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_003,N/A,10:15,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Unknown_Visitor,N/A,14:30,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,SUMMARY,"Total: 1 on-time, 0 late, 3 absent, 1 off",,,,,Unknown: 4
+2026-06-03,E001,Person_001,09:00,09:00,ON_TIME,0,
+2026-06-03,E002,Alice Johnson,08:30,N/A,ABSENT,N/A,
+2026-06-03,E003,Bob Smith,10:00,N/A,ABSENT,N/A,
+2026-06-03,E004,Charlie Brown,09:00,N/A,ABSENT,N/A,
+2026-06-03,E005,Diana Prince,09:00,N/A,ABSENT,N/A,
+2026-06-03,UNKNOWN,Person_004,N/A,09:02,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_002,N/A,08:35,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_003,N/A,10:15,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Unknown_Visitor,N/A,14:30,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,SUMMARY,"Total: 1 on-time, 0 late, 4 absent, 0 off",,,,,Unknown: 4
+2026-06-02,E001,Person_001,09:00,09:00,ON_TIME,0,
+2026-06-02,E002,Alice Johnson,08:30,N/A,ABSENT,N/A,
+2026-06-02,E003,Bob Smith,10:00,N/A,ABSENT,N/A,
+2026-06-02,E004,Charlie Brown,09:00,N/A,ABSENT,N/A,
+2026-06-02,E005,Diana Prince,OFF,N/A,OFF,N/A,
+2026-06-02,UNKNOWN,Person_002,N/A,08:35,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Unknown_Visitor,N/A,14:30,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_003,N/A,10:15,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_004,N/A,09:02,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,E001,Person_001,09:00,09:00,ON_TIME,0,
+2026-06-03,E002,Alice Johnson,08:30,N/A,ABSENT,N/A,
+2026-06-03,E003,Bob Smith,10:00,N/A,ABSENT,N/A,
+2026-06-03,E004,Charlie Brown,09:00,N/A,ABSENT,N/A,
+2026-06-03,E005,Diana Prince,09:00,N/A,ABSENT,N/A,
+2026-06-03,UNKNOWN,Person_002,N/A,08:35,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Unknown_Visitor,N/A,14:30,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_003,N/A,10:15,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_004,N/A,09:02,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-05-28 to 2026-06-05,WEEKLY_SUMMARY,"Total: 2 on-time, 0 late, 7 absent, 1 off",,,,,Unknown: 8
+2026-06-02,UNKNOWN,Person_001,N/A,09:00,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_002,N/A,08:35,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_003,N/A,10:15,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Unknown_Visitor,N/A,14:30,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_004,N/A,09:02,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_001,N/A,09:00,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_002,N/A,08:35,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_003,N/A,10:15,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Unknown_Visitor,N/A,14:30,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_004,N/A,09:02,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-05-28 to 2026-06-05,WEEKLY_SUMMARY,"Total: 0 on-time, 0 late, 0 absent, 0 off",,,,,Unknown: 10
+2026-06-02,E001,Person_001,09:00,09:00,ON_TIME,0,
+2026-06-02,E002,Alice Johnson,08:30,N/A,ABSENT,N/A,
+2026-06-02,E003,Bob Smith,10:00,N/A,ABSENT,N/A,
+2026-06-02,E004,Charlie Brown,09:00,N/A,ABSENT,N/A,
+2026-06-02,E005,Diana Prince,OFF,N/A,OFF,N/A,
+2026-06-02,UNKNOWN,Person_003,N/A,10:15,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Unknown_Visitor,N/A,14:30,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_004,N/A,09:02,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_002,N/A,08:35,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,E001,Person_001,09:00,09:00,ON_TIME,0,
+2026-06-03,E002,Alice Johnson,08:30,N/A,ABSENT,N/A,
+2026-06-03,E003,Bob Smith,10:00,N/A,ABSENT,N/A,
+2026-06-03,E004,Charlie Brown,09:00,N/A,ABSENT,N/A,
+2026-06-03,E005,Diana Prince,09:00,N/A,ABSENT,N/A,
+2026-06-03,UNKNOWN,Person_003,N/A,10:15,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Unknown_Visitor,N/A,14:30,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_004,N/A,09:02,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_002,N/A,08:35,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-05-28 to 2026-06-05,WEEKLY_SUMMARY,"Total: 2 on-time, 0 late, 7 absent, 1 off",,,,,Unknown: 8
+2026-06-02,E001,Person_001,09:00,09:00,ON_TIME,0,
+2026-06-02,E002,Alice Johnson,08:30,N/A,ABSENT,N/A,
+2026-06-02,E003,Bob Smith,10:00,N/A,ABSENT,N/A,
+2026-06-02,E004,Charlie Brown,09:00,N/A,ABSENT,N/A,
+2026-06-02,E005,Diana Prince,OFF,N/A,OFF,N/A,
+2026-06-02,UNKNOWN,Person_003,N/A,10:15,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Unknown_Visitor,N/A,14:30,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_004,N/A,09:02,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,UNKNOWN,Person_002,N/A,08:35,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-02,SUMMARY,"Total: 1 on-time, 0 late, 3 absent, 1 off",,,,,Unknown: 4
+2026-06-03,E001,Person_001,09:00,09:00,ON_TIME,0,
+2026-06-03,E002,Alice Johnson,08:30,N/A,ABSENT,N/A,
+2026-06-03,E003,Bob Smith,10:00,N/A,ABSENT,N/A,
+2026-06-03,E004,Charlie Brown,09:00,N/A,ABSENT,N/A,
+2026-06-03,E005,Diana Prince,09:00,N/A,ABSENT,N/A,
+2026-06-03,UNKNOWN,Person_003,N/A,10:15,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Unknown_Visitor,N/A,14:30,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_004,N/A,09:02,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,UNKNOWN,Person_002,N/A,08:35,UNKNOWN,N/A,Unrecognized face in attendance log
+2026-06-03,SUMMARY,"Total: 1 on-time, 0 late, 4 absent, 0 off",,,,,Unknown: 4

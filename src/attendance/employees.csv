@@ -1,0 +1,6 @@
+employee_id,name,person_dir,department,email
+E001,Person_001,Person_001,Engineering,person001@company.com
+E002,Alice Johnson,,Sales,alice@company.com
+E003,Bob Smith,,Marketing,bob@company.com
+E004,Charlie Brown,,Engineering,charlie@company.com
+E005,Diana Prince,,HR,diana@company.com
